@@ -2,6 +2,7 @@ package com.stemlink.skillmentor.entities;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -24,7 +25,7 @@ public class Subject implements Serializable {
     private Long id;
 
     @Column(nullable = false, name = "subject_name", length = 255)
-    private String subjectName;
+    private String name;
 
     @Column(nullable = false)
     private String description;
@@ -45,4 +46,15 @@ public class Subject implements Serializable {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private Date updatedAt;
+
+    // Backward-compatible JSON property used by existing frontend/session views.
+    @JsonProperty("subjectName")
+    public String getSubjectName() {
+        return name;
+    }
+
+    @JsonProperty("subjectName")
+    public void setSubjectName(String subjectName) {
+        this.name = subjectName;
+    }
 }

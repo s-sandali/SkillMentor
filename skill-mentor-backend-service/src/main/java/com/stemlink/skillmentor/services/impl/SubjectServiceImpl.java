@@ -1,5 +1,7 @@
 package com.stemlink.skillmentor.services.impl;
 
+import com.stemlink.skillmentor.dto.SubjectRequestDTO;
+import com.stemlink.skillmentor.dto.response.SubjectResponseDTO;
 import com.stemlink.skillmentor.entities.Mentor;
 import com.stemlink.skillmentor.entities.Subject;
 import com.stemlink.skillmentor.repositories.MentorRepository;
@@ -14,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +26,36 @@ public class SubjectServiceImpl implements SubjectService {
     private final SubjectRepository subjectRepository;
     private final MentorRepository mentorRepository;
     private final ModelMapper modelMapper;
+
+    @Override
+    @Transactional
+    public SubjectResponseDTO createSubject(SubjectRequestDTO requestDTO) {
+        try {
+            Mentor mentor = mentorRepository.findById(requestDTO.getMentorId()).orElseThrow(
+                    () -> new SkillMentorException("Mentor not found", HttpStatus.NOT_FOUND)
+            );
+
+            Subject subject = modelMapper.map(requestDTO, Subject.class);
+            subject.setMentor(mentor);
+            Subject savedSubject = subjectRepository.save(subject);
+
+            SubjectResponseDTO responseDTO = modelMapper.map(savedSubject, SubjectResponseDTO.class);
+            responseDTO.setMentorId(mentor.getId());
+            responseDTO.setMentorName((mentor.getFirstName() + " " + mentor.getLastName()).trim());
+
+            log.info("Subject created successfully with id {} for mentor {}", savedSubject.getId(), mentor.getId());
+            return responseDTO;
+        } catch (SkillMentorException e) {
+            log.warn("Failed to create subject: {}", e.getMessage());
+            throw e;
+        } catch (DataIntegrityViolationException e) {
+            log.error("Data integrity violation while creating subject: {}", e.getMessage());
+            throw new SkillMentorException("Subject already exists or database constraint violation", HttpStatus.CONFLICT);
+        } catch (Exception exception) {
+            log.error("Failed to create subject", exception);
+            throw new SkillMentorException("Failed to create subject", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     public Page<Subject> getAllSubjects(Pageable pageable){
         try {
