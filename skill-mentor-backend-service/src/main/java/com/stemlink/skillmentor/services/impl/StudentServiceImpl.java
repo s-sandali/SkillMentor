@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +25,9 @@ public class StudentServiceImpl implements StudentService {
 
     public Student createNewStudent(Student student) {
         try {       
-            return studentRepository.save(student);
+            Student savedStudent = studentRepository.save(student);
+            log.info("Successfully created student: {}", savedStudent.getStudentId());
+            return savedStudent;
         } catch (DataIntegrityViolationException e) {
             log.error("Data integrity violation while creating student: {}", e.getMessage());
             throw new SkillMentorException("Student with this email already exists", HttpStatus.CONFLICT);
@@ -33,10 +37,10 @@ public class StudentServiceImpl implements StudentService {
         }
     }
 
-    // TODO: add pagination
-    public List<Student> getAllStudents() {
+    public Page<Student> getAllStudents(Pageable pageable) {
         try {
-            return studentRepository.findAll();
+            log.info("Fetching a page of students");
+            return studentRepository.findAll(pageable);
         } catch (Exception exception) {
             log.error("Failed to get all students", exception);
             throw new SkillMentorException("Failed to get all students", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -45,9 +49,11 @@ public class StudentServiceImpl implements StudentService {
 
     public Student getStudentById(Integer id) {
         try {
-            return studentRepository.findById(id).orElseThrow(
+            Student student = studentRepository.findById(id).orElseThrow(
                     () -> new SkillMentorException("Student not found", HttpStatus.NOT_FOUND)
             );
+            log.info("Successfully fetched student {}", id);
+            return student;
         } catch (SkillMentorException e) {
             throw e;
         } catch (Exception exception) {
@@ -68,7 +74,9 @@ public class StudentServiceImpl implements StudentService {
             }
 
             modelMapper.map(updatedStudent, student);
-            return studentRepository.save(student);
+            Student savedStudent = studentRepository.save(student);
+            log.info("Successfully updated student {}", id);
+            return savedStudent;
         } catch (SkillMentorException e) {
             throw e;
         } catch (Exception exception) {
@@ -80,6 +88,7 @@ public class StudentServiceImpl implements StudentService {
     public void deleteStudent(Integer id) {
         try {
             studentRepository.deleteById(id);
+            log.info("Successfully deleted student {}", id);
         } catch (Exception exception) {
             log.error("Failed to delete student with id {}", id, exception);
             throw new SkillMentorException("Failed to delete student", HttpStatus.INTERNAL_SERVER_ERROR);
