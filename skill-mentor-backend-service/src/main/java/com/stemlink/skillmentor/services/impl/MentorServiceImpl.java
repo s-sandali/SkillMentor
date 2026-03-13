@@ -1,5 +1,7 @@
 package com.stemlink.skillmentor.services.impl;
 
+import com.stemlink.skillmentor.dto.AdminMentorRequestDTO;
+import com.stemlink.skillmentor.dto.response.MentorResponseDTO;
 import com.stemlink.skillmentor.entities.Mentor;
 import com.stemlink.skillmentor.exceptions.SkillMentorException;
 import com.stemlink.skillmentor.repositories.MentorRepository;
@@ -15,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +37,47 @@ public class MentorServiceImpl implements MentorService {
         } catch (Exception exception) {
             log.error("Failed to create new mentor", exception);
             throw new SkillMentorException("Failed to create new mentor", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    @CacheEvict(value = "mentors", allEntries = true)
+    public MentorResponseDTO createAdminMentor(AdminMentorRequestDTO requestDTO) {
+        try {
+            String normalizedEmail = requestDTO.getEmail().trim().toLowerCase();
+            if (mentorRepository.findByEmail(normalizedEmail).isPresent()) {
+                throw new SkillMentorException("Mentor with this email already exists", HttpStatus.CONFLICT);
+            }
+
+            Mentor mentor = modelMapper.map(requestDTO, Mentor.class);
+            mentor.setFirstName(requestDTO.getFirstName().trim());
+            mentor.setLastName(requestDTO.getLastName().trim());
+            mentor.setEmail(normalizedEmail);
+            mentor.setPhoneNumber(trimToNull(requestDTO.getPhoneNumber()));
+            mentor.setTitle(trimToNull(requestDTO.getTitle()));
+            mentor.setProfession(trimToNull(requestDTO.getProfession()));
+            mentor.setCompany(trimToNull(requestDTO.getCompany()));
+            mentor.setBio(requestDTO.getBio().trim());
+            mentor.setProfileImageUrl(trimToNull(requestDTO.getProfileImageUrl()));
+            mentor.setExperienceYears(requestDTO.getExperienceYears());
+            mentor.setIsCertified(Boolean.TRUE.equals(requestDTO.getIsCertified()));
+            mentor.setStartYear(requestDTO.getStartYear().trim());
+            mentor.setMentorId("admin-" + UUID.randomUUID());
+            mentor.setPositiveReviews(0);
+            mentor.setTotalEnrollments(0);
+
+            Mentor savedMentor = mentorRepository.save(mentor);
+            log.info("Admin created mentor {} with id {}", savedMentor.getEmail(), savedMentor.getId());
+            return modelMapper.map(savedMentor, MentorResponseDTO.class);
+        } catch (SkillMentorException e) {
+            log.warn("Failed to create admin mentor: {}", e.getMessage());
+            throw e;
+        } catch (DataIntegrityViolationException e) {
+            log.error("Data integrity violation while creating admin mentor: {}", e.getMessage());
+            throw new SkillMentorException("Mentor with this email already exists", HttpStatus.CONFLICT);
+        } catch (Exception exception) {
+            log.error("Failed to create admin mentor", exception);
+            throw new SkillMentorException("Failed to create mentor", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -105,6 +149,14 @@ public class MentorServiceImpl implements MentorService {
             log.error("Failed to delete mentor with id {}", id, exception);
             throw new SkillMentorException("Failed to delete mentor", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
 }
