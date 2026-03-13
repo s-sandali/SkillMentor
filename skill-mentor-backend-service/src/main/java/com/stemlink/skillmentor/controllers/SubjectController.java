@@ -42,18 +42,21 @@ public class SubjectController extends AbstractController {
 //    }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')")
     public Subject createSubject(@Valid @RequestBody SubjectDTO subjectDTO) {
         Subject subject = modelMapper.map(subjectDTO, Subject.class);
         return subjectService.addNewSubject(subjectDTO.getMentorId(), subject);
     }
 
     @PutMapping("{id}")
-    public Subject updateSubject(@PathVariable Long id, @RequestBody SubjectDTO updatedSubjectDTO) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')")
+    public Subject updateSubject(@PathVariable Long id, @Valid @RequestBody SubjectDTO updatedSubjectDTO) {
         Subject subject = modelMapper.map(updatedSubjectDTO, Subject.class);
         return subjectService.updateSubjectById(id, subject);
     }
 
     @DeleteMapping("{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteSubject(@PathVariable Long id) {
         subjectService.deleteSubject(id);
     }
