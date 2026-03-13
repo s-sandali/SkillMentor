@@ -6,6 +6,12 @@ import DashboardPage from "@/pages/DashboardPage";
 import PaymentPage from "@/pages/PaymentPage";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
 
+import AdminLayout from "@/layouts/AdminLayout";
+import AdminDashboardOverview from "@/pages/Admin/AdminDashboardOverview";
+import CreateSubjectPage from "@/pages/Admin/Subjects/CreateSubjectPage";
+import ManageMentorsPage from "@/pages/Admin/Mentors/ManageMentorsPage";
+import ManageBookingsPage from "@/pages/Admin/Bookings/ManageBookingsPage";
+
 function App() {
   return (
     <BrowserRouter>
@@ -39,6 +45,12 @@ function App() {
               </>
             }
           />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboardOverview />} />
+            <Route path="subjects/create" element={<CreateSubjectPage />} />
+            <Route path="mentors" element={<ManageMentorsPage />} />
+            <Route path="bookings" element={<ManageBookingsPage />} />
+          </Route>
           <Route path="*" element={<LoginPage />} />
         </Routes>
       </Layout>
