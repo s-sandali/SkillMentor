@@ -47,6 +47,7 @@ function App() {
           />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboardOverview />} />
+            <Route path="subjects" element={<CreateSubjectPage />} />
             <Route path="subjects/create" element={<CreateSubjectPage />} />
             <Route path="mentors" element={<ManageMentorsPage />} />
             <Route path="bookings" element={<ManageBookingsPage />} />

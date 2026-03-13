@@ -1,9 +1,26 @@
 // Modified to match with backend SubjectResponseDTO
 export interface Subject {
   id: number;
-  subjectName: string;
+  name?: string;
+  subjectName?: string;
   description: string;
   courseImageUrl: string;
+}
+
+export interface CreateSubjectRequest {
+  name: string;
+  description: string;
+  courseImageUrl?: string;
+  mentorId: number;
+}
+
+export interface SubjectResponse {
+  id: number;
+  name: string;
+  description: string;
+  courseImageUrl?: string;
+  mentorId: number;
+  mentorName: string;
 }
 
 // Modified to match with backend MentorResponseDTO (from GET /api/v1/mentors)
