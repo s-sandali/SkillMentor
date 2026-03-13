@@ -6,7 +6,9 @@ import com.stemlink.skillmentor.services.SubjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,6 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping(path = "/api/v1/subjects")
 @RequiredArgsConstructor
+@Validated
 @PreAuthorize("isAuthenticated()")
 public class SubjectController extends AbstractController {
 
@@ -21,13 +24,13 @@ public class SubjectController extends AbstractController {
     private final SubjectService subjectService;
 
     @GetMapping
-    public List<Subject> getAllSubjects() {
-        return subjectService.getAllSubjects();
+    public ResponseEntity<List<Subject>> getAllSubjects() {
+        return sendOkResponse(subjectService.getAllSubjects());
     }
 
     @GetMapping("{id}")
-    public Subject getSubjectById(@PathVariable Long id) {
-        return subjectService.getSubjectById(id);
+    public ResponseEntity<Subject> getSubjectById(@PathVariable Long id) {
+        return sendOkResponse(subjectService.getSubjectById(id));
     }
 
 //    @PostMapping
@@ -43,21 +46,22 @@ public class SubjectController extends AbstractController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')")
-    public Subject createSubject(@Valid @RequestBody SubjectDTO subjectDTO) {
+    public ResponseEntity<Subject> createSubject(@Valid @RequestBody SubjectDTO subjectDTO) {
         Subject subject = modelMapper.map(subjectDTO, Subject.class);
-        return subjectService.addNewSubject(subjectDTO.getMentorId(), subject);
+        return sendCreatedResponse(subjectService.addNewSubject(subjectDTO.getMentorId(), subject));
     }
 
     @PutMapping("{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')")
-    public Subject updateSubject(@PathVariable Long id, @Valid @RequestBody SubjectDTO updatedSubjectDTO) {
+    public ResponseEntity<Subject> updateSubject(@PathVariable Long id, @Valid @RequestBody SubjectDTO updatedSubjectDTO) {
         Subject subject = modelMapper.map(updatedSubjectDTO, Subject.class);
-        return subjectService.updateSubjectById(id, subject);
+        return sendOkResponse(subjectService.updateSubjectById(id, subject));
     }
 
     @DeleteMapping("{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public void deleteSubject(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteSubject(@PathVariable Long id) {
         subjectService.deleteSubject(id);
+        return sendNoContentResponse();
     }
 }
