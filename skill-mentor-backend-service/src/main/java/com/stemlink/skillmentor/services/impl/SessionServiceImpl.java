@@ -83,33 +83,55 @@ public class SessionServiceImpl implements SessionService {
     }
 
     public List<Session> getAllSessions() {
-        return sessionRepository.findAll(); // SELECT * FROM sessions
+        try {
+            return sessionRepository.findAll();
+        } catch (Exception exception) {
+            log.error("Failed to get all sessions", exception);
+            throw new SkillMentorException("Failed to get all sessions", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     public Session getSessionById(Long id) {
-        return sessionRepository.findById(id).get();
+        try {
+            return sessionRepository.findById(id).orElseThrow(
+                    () -> new SkillMentorException("Session not found", HttpStatus.NOT_FOUND)
+            );
+        } catch (SkillMentorException e) {
+            log.warn("Session not found with id: {}", id);
+            throw e;
+        } catch (Exception exception) {
+            log.error("Error getting session with id: {}", id, exception);
+            throw new SkillMentorException("Failed to get session", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     public Session updateSessionById(Long id, SessionDTO updatedSessionDTO) {
-        Session session = sessionRepository.findById(id).get();
+        try {
+            Session session = sessionRepository.findById(id).orElseThrow(
+                    () -> new SkillMentorException("Session not found", HttpStatus.NOT_FOUND)
+            );
 
-        // source -> destination
-        modelMapper.map(updatedSessionDTO, session);
+            // source -> destination
+            modelMapper.map(updatedSessionDTO, session);
 
-        // Update the related entities
-        if (updatedSessionDTO.getStudentId() != null) {
-            Student student = studentRepository.findById(updatedSessionDTO.getStudentId()).get();
-            session.setStudent(student);
-        }
-        if (updatedSessionDTO.getMentorId() != null) {
-            Mentor mentor = mentorRepository.findByMentorId(String.valueOf(updatedSessionDTO.getMentorId()))
-                    .orElseThrow(() -> new SkillMentorException("Mentor not found", HttpStatus.NOT_FOUND));
-            session.setMentor(mentor);
-        }
-        if (updatedSessionDTO.getSubjectId() != null) {
-            Subject subject = subjectRepository.findById(updatedSessionDTO.getSubjectId()).get();
-            session.setSubject(subject);
-        }
+            // Update the related entities
+            if (updatedSessionDTO.getStudentId() != null) {
+                Student student = studentRepository.findById(updatedSessionDTO.getStudentId()).orElseThrow(
+                        () -> new SkillMentorException("Student not found", HttpStatus.NOT_FOUND)
+                );
+                session.setStudent(student);
+            }
+            if (updatedSessionDTO.getMentorId() != null) {
+                Mentor mentor = mentorRepository.findByMentorId(String.valueOf(updatedSessionDTO.getMentorId()))
+                        .orElseThrow(() -> new SkillMentorException("Mentor not found", HttpStatus.NOT_FOUND));
+                session.setMentor(mentor);
+            }
+            if (updatedSessionDTO.getSubjectId() != null) {
+                Subject subject = subjectRepository.findById(updatedSessionDTO.getSubjectId()).orElseThrow(
+                        () -> new SkillMentorException("Subject not found", HttpStatus.NOT_FOUND)
+                );
+                session.setSubject(subject);
+            }
 
 //        // Update other fields
 //        if (updatedSessionDTO.getSessionAt() != null) {
@@ -134,11 +156,23 @@ public class SessionServiceImpl implements SessionService {
 //            session.setStudentRating(updatedSessionDTO.getStudentRating());
 //        }
 
-        return sessionRepository.save(session);
+            return sessionRepository.save(session);
+        } catch (SkillMentorException e) {
+            log.warn("Dependency not found while updating session id: {}: {}", id, e.getMessage());
+            throw e;
+        } catch (Exception exception) {
+            log.error("Error updating session with id: {}", id, exception);
+            throw new SkillMentorException("Failed to update session", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     public void deleteSession(Long id) {
-        sessionRepository.deleteById(id);
+        try {
+            sessionRepository.deleteById(id);
+        } catch (Exception exception) {
+            log.error("Failed to delete session with id {}", id, exception);
+            throw new SkillMentorException("Failed to delete session", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     public Session enrollSession(UserPrincipal userPrincipal, SessionDTO sessionDTO) {
@@ -154,9 +188,9 @@ public class SessionServiceImpl implements SessionService {
                 });
 
         Mentor mentor = mentorRepository.findByMentorId(String.valueOf(sessionDTO.getMentorId()))
-                .orElseThrow(() -> new RuntimeException("Mentor not found with mentorId: " + sessionDTO.getMentorId()));
+                .orElseThrow(() -> new SkillMentorException("Mentor not found with mentorId: " + sessionDTO.getMentorId(), HttpStatus.NOT_FOUND));
         Subject subject = subjectRepository.findById(sessionDTO.getSubjectId())
-                .orElseThrow(() -> new RuntimeException("Subject not found with id: " + sessionDTO.getSubjectId()));
+                .orElseThrow(() -> new SkillMentorException("Subject not found with id: " + sessionDTO.getSubjectId(), HttpStatus.NOT_FOUND));
 
         Session session = new Session();
         session.setStudent(student);
