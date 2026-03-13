@@ -4,6 +4,7 @@ package com.stemlink.skillmentor.controllers;
 import com.stemlink.skillmentor.dto.SessionDTO;
 import com.stemlink.skillmentor.dto.response.SessionResponseDTO;
 import com.stemlink.skillmentor.entities.Session;
+import com.stemlink.skillmentor.exceptions.SkillMentorException;
 import com.stemlink.skillmentor.security.UserPrincipal;
 import com.stemlink.skillmentor.services.SessionService;
 import jakarta.validation.Valid;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping(path = "/api/v1/sessions")
@@ -27,14 +29,16 @@ public class SessionController extends AbstractController {
     private final SessionService sessionService;
 
     @GetMapping
-    public ResponseEntity<Page<Session>> getAllSessions(Pageable pageable) {
-        return sendOkResponse(sessionService.getAllSessions(pageable));
+    public ResponseEntity<Page<SessionResponseDTO>> getAllSessions(Pageable pageable) {
+        Page<SessionResponseDTO> response = sessionService.getAllSessions(pageable).map(this::toSessionResponseDTO);
+        return sendOkResponse(response);
     }
 
     @GetMapping("{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Session> getSessionById(@PathVariable Long id) {
-        return sendOkResponse(sessionService.getSessionById(id));
+    public ResponseEntity<SessionResponseDTO> getSessionById(@PathVariable("id") Long id) {
+        Session session = sessionService.getSessionById(id);
+        return sendOkResponse(toSessionResponseDTO(session));
     }
 
     @PostMapping
@@ -45,13 +49,13 @@ public class SessionController extends AbstractController {
 
     @PutMapping("{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')")
-    public ResponseEntity<Session> updateSession(@PathVariable Long id, @Valid @RequestBody SessionDTO updatedSessionDTO) {
+    public ResponseEntity<Session> updateSession(@PathVariable("id") Long id, @Valid @RequestBody SessionDTO updatedSessionDTO) {
         return sendOkResponse(sessionService.updateSessionById(id, updatedSessionDTO));
     }
 
     @DeleteMapping("{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteSession(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteSession(@PathVariable("id") Long id) {
         sessionService.deleteSession(id);
         return sendNoContentResponse();
     }
@@ -72,6 +76,9 @@ public class SessionController extends AbstractController {
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<Page<SessionResponseDTO>> getMySessions(Authentication authentication, Pageable pageable) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        if (userPrincipal == null || userPrincipal.getEmail() == null) {
+            throw new SkillMentorException("Unauthorized", HttpStatus.UNAUTHORIZED);
+        }
         Page<Session> sessions = sessionService.getSessionsByStudentEmail(userPrincipal.getEmail(), pageable);
         Page<SessionResponseDTO> response = sessions.map(this::toSessionResponseDTO);
         return sendOkResponse(response);
@@ -80,9 +87,15 @@ public class SessionController extends AbstractController {
     private SessionResponseDTO toSessionResponseDTO(Session session) {
         SessionResponseDTO dto = new SessionResponseDTO();
         dto.setId(session.getId());
-        dto.setMentorName(session.getMentor().getFirstName() + " " + session.getMentor().getLastName());
-        dto.setMentorProfileImageUrl(session.getMentor().getProfileImageUrl());
-        dto.setSubjectName(session.getSubject().getSubjectName());
+        if (session.getMentor() != null) {
+            String firstName = session.getMentor().getFirstName() != null ? session.getMentor().getFirstName() : "";
+            String lastName = session.getMentor().getLastName() != null ? session.getMentor().getLastName() : "";
+            dto.setMentorName((firstName + " " + lastName).trim());
+            dto.setMentorProfileImageUrl(session.getMentor().getProfileImageUrl());
+        }
+        if (session.getSubject() != null) {
+            dto.setSubjectName(session.getSubject().getSubjectName());
+        }
         dto.setSessionAt(session.getSessionAt());
         dto.setDurationMinutes(session.getDurationMinutes());
         dto.setSessionStatus(session.getSessionStatus());

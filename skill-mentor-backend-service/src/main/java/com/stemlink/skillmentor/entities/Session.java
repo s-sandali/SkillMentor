@@ -22,7 +22,7 @@ public class Session implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "student_id", nullable = false)
@@ -45,7 +45,7 @@ public class Session implements Serializable {
     @Column(name = "duration_minutes")
     private Integer durationMinutes;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = SessionStatusConverter.class)
     @Column(name = "session_status", length = 50)
     private SessionStatus sessionStatus;
 

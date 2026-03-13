@@ -8,6 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 @Repository
-public interface SessionRepository extends JpaRepository<Session,Long> {
+public interface SessionRepository extends JpaRepository<Session, Long> {
     Page<Session> findByStudent_Email(String email, Pageable pageable);
 }
