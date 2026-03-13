@@ -57,6 +57,18 @@ export interface MentorResponse {
   totalEnrollments: number;
 }
 
+export interface AdminSession {
+  sessionId: number;
+  studentName: string;
+  mentorName: string;
+  subjectName: string;
+  date: string;
+  duration: number;
+  paymentStatus: string;
+  sessionStatus: string;
+  meetingLink?: string | null;
+}
+
 // Modified to match with backend MentorResponseDTO (from GET /api/v1/mentors)
 export interface Mentor {
   id: number;

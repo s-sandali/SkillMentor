@@ -1,4 +1,5 @@
 import type {
+  AdminSession,
   CreateMentorRequest,
   CreateSubjectRequest,
   Enrollment,
@@ -84,6 +85,70 @@ export async function enrollInSession(
 
 export async function getMyEnrollments(token: string): Promise<Enrollment[]> {
   const res = await fetchWithAuth("/api/v1/sessions/my-sessions", token);
+  return res.json();
+}
+
+export async function getAdminSessions(
+  token: string,
+  params: {
+    page?: number;
+    size?: number;
+    search?: string;
+    paymentStatus?: string;
+    sessionStatus?: string;
+    sort?: string;
+  } = {},
+): Promise<{ content: AdminSession[]; totalElements: number; totalPages: number; number: number }> {
+  const searchParams = new URLSearchParams();
+  searchParams.set("page", String(params.page ?? 0));
+  searchParams.set("size", String(params.size ?? 10));
+
+  if (params.search) {
+    searchParams.set("search", params.search);
+  }
+  if (params.paymentStatus) {
+    searchParams.set("paymentStatus", params.paymentStatus);
+  }
+  if (params.sessionStatus) {
+    searchParams.set("sessionStatus", params.sessionStatus);
+  }
+  if (params.sort) {
+    searchParams.set("sort", params.sort);
+  }
+
+  const res = await fetchWithAuth(`/api/v1/admin/sessions?${searchParams.toString()}`, token);
+  return res.json();
+}
+
+export async function confirmAdminSessionPayment(
+  token: string,
+  sessionId: number,
+): Promise<AdminSession> {
+  const res = await fetchWithAuth(`/api/v1/admin/sessions/${sessionId}/confirm-payment`, token, {
+    method: "PATCH",
+  });
+  return res.json();
+}
+
+export async function completeAdminSession(
+  token: string,
+  sessionId: number,
+): Promise<AdminSession> {
+  const res = await fetchWithAuth(`/api/v1/admin/sessions/${sessionId}/complete`, token, {
+    method: "PATCH",
+  });
+  return res.json();
+}
+
+export async function updateAdminSessionMeetingLink(
+  token: string,
+  sessionId: number,
+  meetingLink: string,
+): Promise<AdminSession> {
+  const res = await fetchWithAuth(`/api/v1/admin/sessions/${sessionId}/meeting-link`, token, {
+    method: "PATCH",
+    body: JSON.stringify({ meetingLink }),
+  });
   return res.json();
 }
 
