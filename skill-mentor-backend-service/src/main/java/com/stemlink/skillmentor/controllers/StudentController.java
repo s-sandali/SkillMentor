@@ -12,10 +12,10 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import com.stemlink.skillmentor.security.UserPrincipal;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-
-import java.util.List;
 
 import static com.stemlink.skillmentor.constants.UserRoles.*;
 
@@ -30,8 +30,8 @@ public class StudentController extends AbstractController{
     private final ModelMapper modelMapper;
 
     @GetMapping
-    public ResponseEntity<List<Student>> getAllStudents() {
-        List<Student> students = studentService.getAllStudents();
+    public ResponseEntity<Page<Student>> getAllStudents(Pageable pageable) {
+        Page<Student> students = studentService.getAllStudents(pageable);
         return sendOkResponse(students);
     }
 

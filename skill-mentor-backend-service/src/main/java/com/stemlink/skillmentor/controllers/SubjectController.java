@@ -6,6 +6,8 @@ import com.stemlink.skillmentor.services.SubjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -24,8 +26,8 @@ public class SubjectController extends AbstractController {
     private final SubjectService subjectService;
 
     @GetMapping
-    public ResponseEntity<List<Subject>> getAllSubjects() {
-        return sendOkResponse(subjectService.getAllSubjects());
+    public ResponseEntity<Page<Subject>> getAllSubjects(Pageable pageable) {
+        return sendOkResponse(subjectService.getAllSubjects(pageable));
     }
 
     @GetMapping("{id}")

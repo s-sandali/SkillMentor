@@ -14,8 +14,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @RestController
 @RequestMapping(path = "/api/v1/sessions")
@@ -27,8 +27,8 @@ public class SessionController extends AbstractController {
     private final SessionService sessionService;
 
     @GetMapping
-    public ResponseEntity<List<Session>> getAllSessions() {
-        return sendOkResponse(sessionService.getAllSessions());
+    public ResponseEntity<Page<Session>> getAllSessions(Pageable pageable) {
+        return sendOkResponse(sessionService.getAllSessions(pageable));
     }
 
     @GetMapping("{id}")
@@ -70,12 +70,10 @@ public class SessionController extends AbstractController {
     // Fetch sessions specific to the signed-in student
     @GetMapping("/my-sessions")
     @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<List<SessionResponseDTO>> getMySessions(Authentication authentication) {
+    public ResponseEntity<Page<SessionResponseDTO>> getMySessions(Authentication authentication, Pageable pageable) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        List<Session> sessions = sessionService.getSessionsByStudentEmail(userPrincipal.getEmail());
-        List<SessionResponseDTO> response = sessions.stream()
-                .map(this::toSessionResponseDTO)
-                .collect(Collectors.toList());
+        Page<Session> sessions = sessionService.getSessionsByStudentEmail(userPrincipal.getEmail(), pageable);
+        Page<SessionResponseDTO> response = sessions.map(this::toSessionResponseDTO);
         return sendOkResponse(response);
     }
 
