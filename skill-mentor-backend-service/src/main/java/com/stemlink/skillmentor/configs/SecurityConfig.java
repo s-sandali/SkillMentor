@@ -57,6 +57,12 @@ public class SecurityConfig {
                         ).permitAll()
                         // Public read access to mentors from home page
                         .requestMatchers(HttpMethod.GET, "/api/v1/mentors", "/api/v1/mentors/*").permitAll()
+                        .requestMatchers(
+                                "/api/v1/admin/**",
+                                "/api/v1/subjects/**",
+                                "/api/v1/mentors/admin/**",
+                                "/api/v1/sessions/admin/**"
+                        ).hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
             .addFilterBefore(clerkAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
