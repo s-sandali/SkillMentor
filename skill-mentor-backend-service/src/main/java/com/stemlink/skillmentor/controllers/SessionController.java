@@ -32,21 +32,25 @@ public class SessionController extends AbstractController {
     }
 
     @GetMapping("{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Session> getSessionById(@PathVariable Long id) {
         return sendOkResponse(sessionService.getSessionById(id));
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')")
     public ResponseEntity<Session> createSession(@Valid @RequestBody SessionDTO sessionDTO) {
         return sendCreatedResponse(sessionService.createNewSession(sessionDTO));
     }
 
     @PutMapping("{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')")
     public ResponseEntity<Session> updateSession(@PathVariable Long id, @Valid @RequestBody SessionDTO updatedSessionDTO) {
         return sendOkResponse(sessionService.updateSessionById(id, updatedSessionDTO));
     }
 
     @DeleteMapping("{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteSession(@PathVariable Long id) {
         sessionService.deleteSession(id);
         return sendNoContentResponse();
@@ -54,15 +58,18 @@ public class SessionController extends AbstractController {
 
     // Enrollment endpoint for students to enroll in a session
     @PostMapping("/enroll")
-    public ResponseEntity<SessionResponseDTO> enroll(
-            @RequestBody SessionDTO sessionDTO,
+    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
+    public ResponseEntity<Session> enrollSession(
+            @Valid @RequestBody SessionDTO sessionDTO,
             Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         Session session = sessionService.enrollSession(userPrincipal, sessionDTO);
-        return sendCreatedResponse(toSessionResponseDTO(session));
+        return sendCreatedResponse(session);
     }
 
+    // Fetch sessions specific to the signed-in student
     @GetMapping("/my-sessions")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<List<SessionResponseDTO>> getMySessions(Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         List<Session> sessions = sessionService.getSessionsByStudentEmail(userPrincipal.getEmail());
