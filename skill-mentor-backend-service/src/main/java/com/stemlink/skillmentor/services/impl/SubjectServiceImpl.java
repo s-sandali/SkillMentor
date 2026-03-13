@@ -35,7 +35,19 @@ public class SubjectServiceImpl implements SubjectService {
                     () -> new SkillMentorException("Mentor not found", HttpStatus.NOT_FOUND)
             );
 
+            String normalizedName = requestDTO.getName().trim();
+            String normalizedDescription = requestDTO.getDescription().trim();
+
+            if (subjectRepository.existsByNameIgnoreCaseAndMentor_Id(normalizedName, mentor.getId())) {
+                throw new SkillMentorException("Subject already exists for the selected mentor", HttpStatus.CONFLICT);
+            }
+
             Subject subject = modelMapper.map(requestDTO, Subject.class);
+            subject.setName(normalizedName);
+            subject.setDescription(normalizedDescription);
+            if (subject.getCourseImageUrl() != null && subject.getCourseImageUrl().isBlank()) {
+                subject.setCourseImageUrl(null);
+            }
             subject.setMentor(mentor);
             Subject savedSubject = subjectRepository.save(subject);
 
@@ -49,8 +61,9 @@ public class SubjectServiceImpl implements SubjectService {
             log.warn("Failed to create subject: {}", e.getMessage());
             throw e;
         } catch (DataIntegrityViolationException e) {
-            log.error("Data integrity violation while creating subject: {}", e.getMessage());
-            throw new SkillMentorException("Subject already exists or database constraint violation", HttpStatus.CONFLICT);
+            String databaseMessage = e.getMostSpecificCause() != null ? e.getMostSpecificCause().getMessage() : e.getMessage();
+            log.error("Data integrity violation while creating subject: {}", databaseMessage);
+            throw new SkillMentorException("Invalid subject data or database constraint violation", HttpStatus.BAD_REQUEST);
         } catch (Exception exception) {
             log.error("Failed to create subject", exception);
             throw new SkillMentorException("Failed to create subject", HttpStatus.INTERNAL_SERVER_ERROR);
