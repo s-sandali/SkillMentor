@@ -11,7 +11,11 @@ import org.springframework.beans.factory.annotation.Value;
 
 import java.net.URL;
 import java.security.PublicKey;
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ClerkValidator implements TokenValidator {
@@ -64,9 +68,6 @@ public class ClerkValidator implements TokenValidator {
     @Override
     public String extractUserId(String token) {
         try {
-            if (!validateToken(token)) {
-                return null;
-            }
             DecodedJWT decodedJWT = decodeToken(token);
             return decodedJWT != null ? decodedJWT.getSubject() : null;
         } catch (Exception e) {
@@ -78,34 +79,55 @@ public class ClerkValidator implements TokenValidator {
     @Override
     public List<String> extractRoles(String token) {
         try {
-            if (!validateToken(token)) {
-                return null;
-            }
             DecodedJWT decodedJWT = decodeToken(token);
             if (decodedJWT == null) {
                 return null;
             }
 
-            // Check if there's a direct "roles" claim
+            // 1) roles claim as array
             if (decodedJWT.getClaim("roles") != null && !decodedJWT.getClaim("roles").isNull()) {
-                return decodedJWT.getClaim("roles").asList(String.class);
+                List<String> roles = decodedJWT.getClaim("roles").asList(String.class);
+                if (roles != null && !roles.isEmpty()) {
+                    return roles.stream()
+                            .map(String::trim)
+                            .filter(role -> !role.isBlank())
+                            .map(role -> role.toUpperCase(Locale.ROOT))
+                            .collect(Collectors.toList());
+                }
+
+                // 2) roles claim as single string
+                String singleRole = decodedJWT.getClaim("roles").asString();
+                if (singleRole != null && !singleRole.isBlank()) {
+                    return Collections.singletonList(singleRole.trim().toUpperCase(Locale.ROOT));
+                }
             }
 
-            // Fallback: check "public_metadata" object
+            // 3) direct role claim
+            if (decodedJWT.getClaim("role") != null && !decodedJWT.getClaim("role").isNull()) {
+                String directRole = decodedJWT.getClaim("role").asString();
+                if (directRole != null && !directRole.isBlank()) {
+                    return Collections.singletonList(directRole.trim().toUpperCase(Locale.ROOT));
+                }
+            }
+
+            // 4) public_metadata.role fallback
             if (decodedJWT.getClaim("public_metadata") != null && !decodedJWT.getClaim("public_metadata").isNull()) {
-                java.util.Map<String, Object> publicMetadata = decodedJWT.getClaim("public_metadata").asMap();
+                Map<String, Object> publicMetadata = decodedJWT.getClaim("public_metadata").asMap();
                 if (publicMetadata != null && publicMetadata.containsKey("role")) {
                     Object roleObj = publicMetadata.get("role");
                     if (roleObj instanceof String) {
-                        return java.util.Collections.singletonList(((String) roleObj).toUpperCase());
-                    } else if (roleObj instanceof java.util.List<?>) {
-                        return ((java.util.List<?>) roleObj).stream()
+                        return Collections.singletonList(((String) roleObj).trim().toUpperCase(Locale.ROOT));
+                    } else if (roleObj instanceof List<?>) {
+                        return ((List<?>) roleObj).stream()
                                 .map(Object::toString)
-                                .map(String::toUpperCase)
-                                .collect(java.util.stream.Collectors.toList());
+                                .map(String::trim)
+                                .filter(role -> !role.isBlank())
+                                .map(role -> role.toUpperCase(Locale.ROOT))
+                                .collect(Collectors.toList());
                     }
                 }
             }
+
             return null;
         } catch (Exception e) {
             log.error("Error extracting roles: {}", e.getMessage());

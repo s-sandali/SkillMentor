@@ -31,7 +31,7 @@ public class MentorController extends AbstractController {
 
     @GetMapping
     public ResponseEntity<Page<Mentor>> getAllMentors(
-            @RequestParam(required = false) String name,
+            @RequestParam(name = "name", required = false) String name,
             Pageable pageable) {
         Page<Mentor> mentors = mentorService.getAllMentors(name, pageable);
         return sendOkResponse(mentors);
