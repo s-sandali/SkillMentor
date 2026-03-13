@@ -45,8 +45,9 @@ public class Session implements Serializable {
     @Column(name = "duration_minutes")
     private Integer durationMinutes;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "session_status", length = 50)
-    private String sessionStatus;
+    private SessionStatus sessionStatus;
 
     @Column(name = "meeting_link")
     private String meetingLink;

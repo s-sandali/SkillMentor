@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Min;
 import lombok.Data;
 
 import java.util.Date;
+import com.stemlink.skillmentor.entities.SessionStatus;
 
 @Data
 public class SessionDTO {
@@ -24,7 +25,7 @@ public class SessionDTO {
     @Min(value = 1, message = "Duration must be at least 1 minute")
     private Integer durationMinutes;
 
-    private String sessionStatus;
+    private SessionStatus sessionStatus;
 
     private String meetingLink;
 

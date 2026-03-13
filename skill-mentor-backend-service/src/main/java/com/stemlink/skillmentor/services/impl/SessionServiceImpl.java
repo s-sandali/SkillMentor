@@ -2,6 +2,7 @@ package com.stemlink.skillmentor.services.impl;
 
 import com.stemlink.skillmentor.SkillmentorApplication;
 import com.stemlink.skillmentor.entities.Session;
+import com.stemlink.skillmentor.entities.SessionStatus;
 import com.stemlink.skillmentor.entities.Student;
 import com.stemlink.skillmentor.entities.Mentor;
 import com.stemlink.skillmentor.entities.Subject;
@@ -198,7 +199,7 @@ public class SessionServiceImpl implements SessionService {
         session.setSubject(subject);
         session.setSessionAt(sessionDTO.getSessionAt());
         session.setDurationMinutes(sessionDTO.getDurationMinutes() != null ? sessionDTO.getDurationMinutes() : 60);
-        session.setSessionStatus("scheduled");
+        session.setSessionStatus(SessionStatus.SCHEDULED);
         session.setPaymentStatus("pending");
 
         return sessionRepository.save(session);
