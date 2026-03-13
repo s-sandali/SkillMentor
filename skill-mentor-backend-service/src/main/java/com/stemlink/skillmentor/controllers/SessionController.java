@@ -27,28 +27,29 @@ public class SessionController extends AbstractController {
     private final SessionService sessionService;
 
     @GetMapping
-    public List<Session> getAllSessions() {
-        return sessionService.getAllSessions();
+    public ResponseEntity<List<Session>> getAllSessions() {
+        return sendOkResponse(sessionService.getAllSessions());
     }
 
     @GetMapping("{id}")
-    public Session getSessionById(@PathVariable Long id) {
-        return sessionService.getSessionById(id);
+    public ResponseEntity<Session> getSessionById(@PathVariable Long id) {
+        return sendOkResponse(sessionService.getSessionById(id));
     }
 
     @PostMapping
-    public Session createSession(@Valid @RequestBody SessionDTO sessionDTO) {
-        return sessionService.createNewSession(sessionDTO);
+    public ResponseEntity<Session> createSession(@Valid @RequestBody SessionDTO sessionDTO) {
+        return sendCreatedResponse(sessionService.createNewSession(sessionDTO));
     }
 
     @PutMapping("{id}")
-    public Session updateSession(@PathVariable Long id, @Valid @RequestBody SessionDTO updatedSessionDTO) {
-        return sessionService.updateSessionById(id, updatedSessionDTO);
+    public ResponseEntity<Session> updateSession(@PathVariable Long id, @Valid @RequestBody SessionDTO updatedSessionDTO) {
+        return sendOkResponse(sessionService.updateSessionById(id, updatedSessionDTO));
     }
 
     @DeleteMapping("{id}")
-    public void deleteSession(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteSession(@PathVariable Long id) {
         sessionService.deleteSession(id);
+        return sendNoContentResponse();
     }
 
     // Enrollment endpoint for students to enroll in a session
