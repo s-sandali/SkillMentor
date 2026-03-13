@@ -10,6 +10,6 @@ public interface MentorService {
     Mentor createNewMentor(Mentor mentor);
     Page<Mentor> getAllMentors(String name, Pageable pageable);
     Mentor getMentorById(Long id);
-    Mentor updateMentorById(Long id, Mentor updatedMentor);
+    Mentor updateMentorById(Long id, Mentor updatedMentor, String requestingClerkId, boolean isAdmin);
     void deleteMentor(Long id);
 }

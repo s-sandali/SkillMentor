@@ -10,6 +10,6 @@ public interface StudentService {
     Student createNewStudent(Student student);
     List<Student> getAllStudents();
     Student getStudentById(Integer id);
-    Student updateStudentById(Integer id, Student updatedStudent);
+    Student updateStudentById(Integer id, Student updatedStudent, String requestingClerkId, boolean isAdmin);
     void deleteStudent(Integer id);
 }

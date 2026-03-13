@@ -75,11 +75,17 @@ public class MentorServiceImpl implements MentorService {
     }
 
     @CacheEvict(value = "mentors", allEntries = true)
-    public Mentor updateMentorById(Long id, Mentor updatedMentor) {
+    public Mentor updateMentorById(Long id, Mentor updatedMentor, String requestingClerkId, boolean isAdmin) {
         try {
             Mentor mentor = mentorRepository.findById(id).orElseThrow(
                     () -> new SkillMentorException("Mentor Not found", HttpStatus.NOT_FOUND)
             );
+
+            if (!isAdmin && !mentor.getMentorId().equals(requestingClerkId)) {
+                log.warn("User {} attempted to update mentor profile {} without permission", requestingClerkId, mentor.getMentorId());
+                throw new SkillMentorException("You do not have permission to update this mentor's profile", HttpStatus.FORBIDDEN);
+            }
+
             modelMapper.map(updatedMentor, mentor);
             return mentorRepository.save(mentor);
         } catch (SkillMentorException skillMentorException) {

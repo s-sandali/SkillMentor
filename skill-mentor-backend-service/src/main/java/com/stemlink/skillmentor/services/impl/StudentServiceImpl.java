@@ -44,22 +44,35 @@ public class StudentServiceImpl implements StudentService {
     }
 
     public Student getStudentById(Integer id) {
-        return studentRepository.findById(id).orElseThrow(
-                () -> new SkillMentorException("Student not found", HttpStatus.NOT_FOUND)
-        );
+        try {
+            return studentRepository.findById(id).orElseThrow(
+                    () -> new SkillMentorException("Student not found", HttpStatus.NOT_FOUND)
+            );
+        } catch (SkillMentorException e) {
+            throw e;
+        } catch (Exception exception) {
+            log.error("Failed to get student id {}", id, exception);
+            throw new SkillMentorException("Failed to get student", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
-    public Student updateStudentById(Integer id, Student updatedStudent) {
+    public Student updateStudentById(Integer id, Student updatedStudent, String requestingClerkId, boolean isAdmin) {
         try {
             Student student = studentRepository.findById(id).orElseThrow(
                     () -> new SkillMentorException("Student not found", HttpStatus.NOT_FOUND)
             );
+
+            if (!isAdmin && !student.getStudentId().equals(requestingClerkId)) {
+                log.warn("User {} attempted to update student profile {} without permission", requestingClerkId, student.getStudentId());
+                throw new SkillMentorException("You do not have permission to update this student's profile", HttpStatus.FORBIDDEN);
+            }
+
             modelMapper.map(updatedStudent, student);
             return studentRepository.save(student);
         } catch (SkillMentorException e) {
             throw e;
         } catch (Exception exception) {
-            log.error("Error updating student", exception);
+            log.error("Failed to update student id {}", id, exception);
             throw new SkillMentorException("Failed to update student", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

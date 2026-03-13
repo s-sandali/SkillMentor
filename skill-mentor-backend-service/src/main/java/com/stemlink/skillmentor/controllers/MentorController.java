@@ -69,9 +69,13 @@ public class MentorController extends AbstractController {
 
     @PutMapping("{id}")
     @PreAuthorize("hasAnyRole('" + ROLE_ADMIN + "', '" + ROLE_MENTOR + "')")
-    public ResponseEntity<Mentor> updateMentor(@PathVariable Long id, @Valid @RequestBody MentorDTO updatedMentorDTO) {
+    public ResponseEntity<Mentor> updateMentor(@PathVariable Long id, @Valid @RequestBody MentorDTO updatedMentorDTO, Authentication authentication) {
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        
         Mentor mentor = modelMapper.map(updatedMentorDTO, Mentor.class);
-        Mentor updatedMentor = mentorService.updateMentorById(id, mentor);
+        Mentor updatedMentor = mentorService.updateMentorById(id, mentor, userPrincipal.getId(), isAdmin);
         return sendOkResponse(updatedMentor);
 
     }
