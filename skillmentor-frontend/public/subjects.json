@@ -1,0 +1,38 @@
+[
+  {
+    "subjectName": "Cloud Computing & AWS Certification Training",
+    "description": "Hands-on training covering AWS cloud fundamentals, architecture, and certification preparation with real-world projects and exam-focused guidance.",
+    "courseImageUrl": "",
+    "mentorId": 1
+  },
+  {
+    "subjectName": "DevOps Engineering & AWS Certification Training",
+    "description": "Comprehensive DevOps training focusing on CI/CD pipelines, Kubernetes, automation, and AWS DevOps certification preparation.",
+    "courseImageUrl": "",
+    "mentorId": 2
+  },
+  {
+    "subjectName": "Machine Learning & AWS ML Certification Training",
+    "description": "Learn machine learning concepts and AWS ML services like SageMaker while preparing for the AWS Machine Learning Specialty certification.",
+    "courseImageUrl": "",
+    "mentorId": 3
+  },
+  {
+    "subjectName": "Cybersecurity & Microsoft Certification Training",
+    "description": "Enterprise security training covering identity protection, Zero Trust architecture, cloud security, and Microsoft security certifications.",
+    "courseImageUrl": "",
+    "mentorId": 4
+  },
+  {
+    "subjectName": "Azure Development & Microsoft Certification Training",
+    "description": "Practical Azure development training including serverless computing, cloud-native apps, and preparation for Microsoft Azure certifications.",
+    "courseImageUrl": "",
+    "mentorId": 5
+  },
+  {
+    "subjectName": "Data Engineering & Azure Certification Training",
+    "description": "Modern data engineering training with Azure tools including Synapse, Data Factory, and Databricks for building scalable data pipelines.",
+    "courseImageUrl": "",
+    "mentorId": 6
+  }
+]
