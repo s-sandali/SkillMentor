@@ -2,8 +2,8 @@ package com.stemlink.skillmentor.services.impl;
 
 import com.stemlink.skillmentor.entities.Mentor;
 import com.stemlink.skillmentor.entities.Subject;
-import com.stemlink.skillmentor.respositories.MentorRepository;
-import com.stemlink.skillmentor.respositories.SubjectRepository;
+import com.stemlink.skillmentor.repositories.MentorRepository;
+import com.stemlink.skillmentor.repositories.SubjectRepository;
 import com.stemlink.skillmentor.services.SubjectService;
 import com.stemlink.skillmentor.exceptions.SkillMentorException;
 import lombok.RequiredArgsConstructor;

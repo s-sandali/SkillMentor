@@ -1,16 +1,15 @@
 package com.stemlink.skillmentor.services.impl;
 
-import com.stemlink.skillmentor.SkillmentorApplication;
 import com.stemlink.skillmentor.entities.Session;
 import com.stemlink.skillmentor.entities.SessionStatus;
 import com.stemlink.skillmentor.entities.Student;
 import com.stemlink.skillmentor.entities.Mentor;
 import com.stemlink.skillmentor.entities.Subject;
 import com.stemlink.skillmentor.exceptions.SkillMentorException;
-import com.stemlink.skillmentor.respositories.SessionRepository;
-import com.stemlink.skillmentor.respositories.StudentRepository;
-import com.stemlink.skillmentor.respositories.MentorRepository;
-import com.stemlink.skillmentor.respositories.SubjectRepository;
+import com.stemlink.skillmentor.repositories.SessionRepository;
+import com.stemlink.skillmentor.repositories.StudentRepository;
+import com.stemlink.skillmentor.repositories.MentorRepository;
+import com.stemlink.skillmentor.repositories.SubjectRepository;
 import com.stemlink.skillmentor.dto.SessionDTO;
 import com.stemlink.skillmentor.security.UserPrincipal;
 import com.stemlink.skillmentor.services.SessionService;
@@ -23,7 +22,6 @@ import org.springframework.stereotype.Service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor

@@ -2,7 +2,7 @@ package com.stemlink.skillmentor.services.impl;
 
 import com.stemlink.skillmentor.entities.Mentor;
 import com.stemlink.skillmentor.exceptions.SkillMentorException;
-import com.stemlink.skillmentor.respositories.MentorRepository;
+import com.stemlink.skillmentor.repositories.MentorRepository;
 import com.stemlink.skillmentor.services.MentorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

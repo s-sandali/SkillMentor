@@ -1,4 +1,4 @@
-package com.stemlink.skillmentor.respositories;
+package com.stemlink.skillmentor.repositories;
 
 
 import com.stemlink.skillmentor.entities.Student;

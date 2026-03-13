@@ -1,7 +1,7 @@
 package com.stemlink.skillmentor.services.impl;
 
 import com.stemlink.skillmentor.entities.Student;
-import com.stemlink.skillmentor.respositories.StudentRepository;
+import com.stemlink.skillmentor.repositories.StudentRepository;
 import com.stemlink.skillmentor.services.StudentService;
 import com.stemlink.skillmentor.exceptions.SkillMentorException;
 import lombok.RequiredArgsConstructor;
@@ -12,8 +12,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor

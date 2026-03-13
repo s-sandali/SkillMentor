@@ -1,4 +1,4 @@
-package com.stemlink.skillmentor.respositories;
+package com.stemlink.skillmentor.repositories;
 
 import com.stemlink.skillmentor.entities.Mentor;
 import org.springframework.data.jpa.repository.JpaRepository;
