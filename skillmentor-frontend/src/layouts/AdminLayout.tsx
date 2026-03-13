@@ -12,7 +12,7 @@ const sidebarNavItems = [
   },
   {
     title: "Subjects",
-    href: "/admin/subjects/create",
+    href: "/admin/subjects",
     icon: BookOpen,
   },
   {
