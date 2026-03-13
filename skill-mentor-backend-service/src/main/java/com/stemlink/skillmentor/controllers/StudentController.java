@@ -36,7 +36,7 @@ public class StudentController extends AbstractController{
     }
 
     @GetMapping("{id}")
-    public ResponseEntity<Student> getStudentById(@PathVariable Integer id) {
+    public ResponseEntity<Student> getStudentById(@PathVariable("id") Integer id) {
         Student student = studentService.getStudentById(id);
         return sendOkResponse(student);
     }
@@ -58,7 +58,7 @@ public class StudentController extends AbstractController{
 
     @PutMapping("{id}")
     @PreAuthorize("hasAnyRole('" + ROLE_ADMIN + "', '" + ROLE_STUDENT + "')")
-    public ResponseEntity<Student> updateStudent(@PathVariable Integer id, @Valid @RequestBody StudentDTO updatedStudentDTO, Authentication authentication) {
+    public ResponseEntity<Student> updateStudent(@PathVariable("id") Integer id, @Valid @RequestBody StudentDTO updatedStudentDTO, Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
@@ -70,7 +70,7 @@ public class StudentController extends AbstractController{
 
     @DeleteMapping("{id}")
     @PreAuthorize("hasAnyRole('" + ROLE_ADMIN + "')")
-    public ResponseEntity<Void> deleteStudent(@PathVariable Integer id) {
+    public ResponseEntity<Void> deleteStudent(@PathVariable("id") Integer id) {
         studentService.deleteStudent(id);
         return sendNoContentResponse();
     }
