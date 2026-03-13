@@ -86,7 +86,28 @@ public class ClerkValidator implements TokenValidator {
             if (decodedJWT == null) {
                 return null;
             }
-            return decodedJWT.getClaim("roles").asList(String.class);
+
+            // Check if there's a direct "roles" claim
+            if (decodedJWT.getClaim("roles") != null && !decodedJWT.getClaim("roles").isNull()) {
+                return decodedJWT.getClaim("roles").asList(String.class);
+            }
+
+            // Fallback: check "public_metadata" object
+            if (decodedJWT.getClaim("public_metadata") != null && !decodedJWT.getClaim("public_metadata").isNull()) {
+                java.util.Map<String, Object> publicMetadata = decodedJWT.getClaim("public_metadata").asMap();
+                if (publicMetadata != null && publicMetadata.containsKey("role")) {
+                    Object roleObj = publicMetadata.get("role");
+                    if (roleObj instanceof String) {
+                        return java.util.Collections.singletonList(((String) roleObj).toUpperCase());
+                    } else if (roleObj instanceof java.util.List<?>) {
+                        return ((java.util.List<?>) roleObj).stream()
+                                .map(Object::toString)
+                                .map(String::toUpperCase)
+                                .collect(java.util.stream.Collectors.toList());
+                    }
+                }
+            }
+            return null;
         } catch (Exception e) {
             log.error("Error extracting roles: {}", e.getMessage());
             return null;
