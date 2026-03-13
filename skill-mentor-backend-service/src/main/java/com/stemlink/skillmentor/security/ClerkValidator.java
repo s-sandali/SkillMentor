@@ -13,7 +13,6 @@ import java.net.URL;
 import java.security.PublicKey;
 import java.util.List;
 
-
 @Slf4j
 public class ClerkValidator implements TokenValidator {
 
@@ -29,7 +28,7 @@ public class ClerkValidator implements TokenValidator {
     }
 
     @Override
-    public boolean validateToken(String token){
+    public boolean validateToken(String token) {
         try {
             // Step 1: Decode JWT without verification to get header info
             DecodedJWT decodedJWT = decodeToken(token);
@@ -147,7 +146,6 @@ public class ClerkValidator implements TokenValidator {
         }
     }
 
-
     private DecodedJWT decodeToken(String token) {
         try {
             return JWT.decode(token);
@@ -168,9 +166,9 @@ public class ClerkValidator implements TokenValidator {
             // Create algorithm and verify the token (allowing 60 seconds of clock skew)
             Algorithm algorithm = Algorithm.RSA256((java.security.interfaces.RSAPublicKey) publicKey, null);
             JWT.require(algorithm)
-               .acceptLeeway(60) // allow 60s of clock skew for nbf/exp claims
-               .build()
-               .verify(token);
+                    .acceptLeeway(60) // allow 60s of clock skew for nbf/exp claims
+                    .build()
+                    .verify(token);
 
             log.debug("Token signature verified successfully for kid: {}", kid);
             return true;
