@@ -1,7 +1,9 @@
 import type {
+  CreateMentorRequest,
   CreateSubjectRequest,
   Enrollment,
   Mentor,
+  MentorResponse,
   Subject,
   SubjectResponse,
 } from "@/types";
@@ -49,6 +51,17 @@ export async function getMentors(
   size = 100,
 ): Promise<{ content: Mentor[]; totalElements: number; totalPages: number }> {
   const res = await fetchWithAuth(`/api/v1/mentors?page=${page}&size=${size}`, token);
+  return res.json();
+}
+
+export async function createAdminMentor(
+  token: string,
+  data: CreateMentorRequest,
+): Promise<MentorResponse> {
+  const res = await fetchWithAuth("/api/v1/admin/mentors", token, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
   return res.json();
 }
 
