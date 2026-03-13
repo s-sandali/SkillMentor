@@ -6,6 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SubjectRepository extends JpaRepository<Subject,Long> {
-
-    // custom queries
+    boolean existsByNameIgnoreCaseAndMentor_Id(String name, Long mentorId);
 }

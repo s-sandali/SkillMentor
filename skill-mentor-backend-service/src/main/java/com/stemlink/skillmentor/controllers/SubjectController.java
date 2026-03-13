@@ -29,7 +29,7 @@ public class SubjectController extends AbstractController {
     }
 
     @GetMapping("{id}")
-    public ResponseEntity<Subject> getSubjectById(@PathVariable Long id) {
+    public ResponseEntity<Subject> getSubjectById(@PathVariable("id") Long id) {
         return sendOkResponse(subjectService.getSubjectById(id));
     }
 
@@ -53,14 +53,14 @@ public class SubjectController extends AbstractController {
 
     @PutMapping("{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')")
-    public ResponseEntity<Subject> updateSubject(@PathVariable Long id, @Valid @RequestBody SubjectDTO updatedSubjectDTO) {
+    public ResponseEntity<Subject> updateSubject(@PathVariable("id") Long id, @Valid @RequestBody SubjectDTO updatedSubjectDTO) {
         Subject subject = modelMapper.map(updatedSubjectDTO, Subject.class);
         return sendOkResponse(subjectService.updateSubjectById(id, subject));
     }
 
     @DeleteMapping("{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteSubject(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteSubject(@PathVariable("id") Long id) {
         subjectService.deleteSubject(id);
         return sendNoContentResponse();
     }
