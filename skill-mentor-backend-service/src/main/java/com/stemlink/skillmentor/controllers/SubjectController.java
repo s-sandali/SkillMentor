@@ -15,7 +15,7 @@ import java.util.List;
 @RequestMapping(path = "/api/v1/subjects")
 @RequiredArgsConstructor
 @PreAuthorize("isAuthenticated()")
-public class SubjectController {
+public class SubjectController extends AbstractController {
 
     private final ModelMapper modelMapper;
     private final SubjectService subjectService;
