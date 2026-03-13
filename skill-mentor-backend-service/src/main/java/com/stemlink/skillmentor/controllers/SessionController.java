@@ -36,7 +36,7 @@ public class SessionController extends AbstractController {
 
     @GetMapping("{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<SessionResponseDTO> getSessionById(@PathVariable("id") Integer id) {
+    public ResponseEntity<SessionResponseDTO> getSessionById(@PathVariable("id") Long id) {
         Session session = sessionService.getSessionById(id);
         return sendOkResponse(toSessionResponseDTO(session));
     }
@@ -49,13 +49,13 @@ public class SessionController extends AbstractController {
 
     @PutMapping("{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')")
-    public ResponseEntity<Session> updateSession(@PathVariable("id") Integer id, @Valid @RequestBody SessionDTO updatedSessionDTO) {
+    public ResponseEntity<Session> updateSession(@PathVariable("id") Long id, @Valid @RequestBody SessionDTO updatedSessionDTO) {
         return sendOkResponse(sessionService.updateSessionById(id, updatedSessionDTO));
     }
 
     @DeleteMapping("{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteSession(@PathVariable("id") Integer id) {
+    public ResponseEntity<Void> deleteSession(@PathVariable("id") Long id) {
         sessionService.deleteSession(id);
         return sendNoContentResponse();
     }

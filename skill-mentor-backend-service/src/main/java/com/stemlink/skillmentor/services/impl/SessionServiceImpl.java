@@ -1,5 +1,6 @@
 package com.stemlink.skillmentor.services.impl;
 
+import com.stemlink.skillmentor.dto.AdminMeetingLinkRequestDTO;
 import com.stemlink.skillmentor.entities.Session;
 import com.stemlink.skillmentor.entities.SessionStatus;
 import com.stemlink.skillmentor.entities.Student;
@@ -11,6 +12,7 @@ import com.stemlink.skillmentor.repositories.StudentRepository;
 import com.stemlink.skillmentor.repositories.MentorRepository;
 import com.stemlink.skillmentor.repositories.SubjectRepository;
 import com.stemlink.skillmentor.dto.SessionDTO;
+import com.stemlink.skillmentor.dto.response.AdminSessionResponseDTO;
 import com.stemlink.skillmentor.security.UserPrincipal;
 import com.stemlink.skillmentor.services.SessionService;
 import com.stemlink.skillmentor.utils.ValidationUtils;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -173,6 +176,76 @@ public class SessionServiceImpl implements SessionService {
         }
     }
 
+    @Override
+    public Page<AdminSessionResponseDTO> getAdminSessions(String search, String paymentStatus, String sessionStatus, Pageable pageable) {
+        try {
+            String normalizedSearch = normalizeSearch(search);
+            String normalizedPaymentStatus = normalizeSearch(paymentStatus);
+            String normalizedSessionStatus = normalizeSearch(sessionStatus);
+
+            return sessionRepository
+                    .findAdminSessions(normalizedSearch, normalizedPaymentStatus, normalizedSessionStatus, pageable)
+                    .map(this::toAdminSessionResponseDTO);
+        } catch (Exception exception) {
+            log.error("Failed to fetch admin sessions", exception);
+            throw new SkillMentorException("Failed to fetch sessions", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    @Transactional
+    public AdminSessionResponseDTO confirmPayment(Long id) {
+        try {
+            Session session = getSessionById(id);
+            session.setPaymentStatus("accepted");
+            Session updatedSession = sessionRepository.save(session);
+            log.info("Confirmed payment for session {}", id);
+            return toAdminSessionResponseDTO(updatedSession);
+        } catch (SkillMentorException e) {
+            log.warn("Unable to confirm payment for session {}: {}", id, e.getMessage());
+            throw e;
+        } catch (Exception exception) {
+            log.error("Failed to confirm payment for session {}", id, exception);
+            throw new SkillMentorException("Failed to confirm payment", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    @Transactional
+    public AdminSessionResponseDTO completeSession(Long id) {
+        try {
+            Session session = getSessionById(id);
+            session.setSessionStatus(SessionStatus.COMPLETED);
+            Session updatedSession = sessionRepository.save(session);
+            log.info("Marked session {} as completed", id);
+            return toAdminSessionResponseDTO(updatedSession);
+        } catch (SkillMentorException e) {
+            log.warn("Unable to complete session {}: {}", id, e.getMessage());
+            throw e;
+        } catch (Exception exception) {
+            log.error("Failed to complete session {}", id, exception);
+            throw new SkillMentorException("Failed to complete session", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    @Transactional
+    public AdminSessionResponseDTO updateMeetingLink(Long id, AdminMeetingLinkRequestDTO requestDTO) {
+        try {
+            Session session = getSessionById(id);
+            session.setMeetingLink(requestDTO.getMeetingLink().trim());
+            Session updatedSession = sessionRepository.save(session);
+            log.info("Updated meeting link for session {}", id);
+            return toAdminSessionResponseDTO(updatedSession);
+        } catch (SkillMentorException e) {
+            log.warn("Unable to update meeting link for session {}: {}", id, e.getMessage());
+            throw e;
+        } catch (Exception exception) {
+            log.error("Failed to update meeting link for session {}", id, exception);
+            throw new SkillMentorException("Failed to update meeting link", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public Session enrollSession(UserPrincipal userPrincipal, SessionDTO sessionDTO) {
         // Find student by email from JWT, or auto-create user on first enrollment
         Student student = studentRepository.findByEmail(userPrincipal.getEmail())
@@ -204,6 +277,40 @@ public class SessionServiceImpl implements SessionService {
 
     public Page<Session> getSessionsByStudentEmail(String email, Pageable pageable) {
         return sessionRepository.findByStudent_Email(email, pageable);
+    }
+
+    private AdminSessionResponseDTO toAdminSessionResponseDTO(Session session) {
+        AdminSessionResponseDTO dto = new AdminSessionResponseDTO();
+        dto.setSessionId(session.getId());
+        if (session.getStudent() != null) {
+            dto.setStudentName(buildFullName(session.getStudent().getFirstName(), session.getStudent().getLastName()));
+        }
+        if (session.getMentor() != null) {
+            dto.setMentorName(buildFullName(session.getMentor().getFirstName(), session.getMentor().getLastName()));
+        }
+        if (session.getSubject() != null) {
+            dto.setSubjectName(session.getSubject().getName() != null ? session.getSubject().getName() : session.getSubject().getSubjectName());
+        }
+        dto.setDate(session.getSessionAt());
+        dto.setDuration(session.getDurationMinutes());
+        dto.setPaymentStatus(session.getPaymentStatus());
+        dto.setSessionStatus(session.getSessionStatus());
+        dto.setMeetingLink(session.getMeetingLink());
+        return dto;
+    }
+
+    private String buildFullName(String firstName, String lastName) {
+        String safeFirstName = firstName != null ? firstName : "";
+        String safeLastName = lastName != null ? lastName : "";
+        return (safeFirstName + " " + safeLastName).trim();
+    }
+
+    private String normalizeSearch(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
 }
