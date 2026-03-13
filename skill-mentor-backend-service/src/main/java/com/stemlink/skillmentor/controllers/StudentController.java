@@ -58,9 +58,13 @@ public class StudentController extends AbstractController{
 
     @PutMapping("{id}")
     @PreAuthorize("hasAnyRole('" + ROLE_ADMIN + "', '" + ROLE_STUDENT + "')")
-    public ResponseEntity<Student> updateStudent(@PathVariable Integer id, @Valid @RequestBody StudentDTO updatedStudentDTO) {
+    public ResponseEntity<Student> updateStudent(@PathVariable Integer id, @Valid @RequestBody StudentDTO updatedStudentDTO, Authentication authentication) {
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
         Student student = modelMapper.map(updatedStudentDTO, Student.class);
-        Student updatedStudent = studentService.updateStudentById(id, student);
+        Student updatedStudent = studentService.updateStudentById(id, student, userPrincipal.getId(), isAdmin);
         return sendOkResponse(updatedStudent);
     }
 
