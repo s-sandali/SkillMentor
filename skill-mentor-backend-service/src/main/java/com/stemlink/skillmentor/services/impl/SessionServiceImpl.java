@@ -21,10 +21,9 @@ import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -83,9 +82,9 @@ public class SessionServiceImpl implements SessionService {
 
     }
 
-    public List<Session> getAllSessions() {
+    public Page<Session> getAllSessions(Pageable pageable) {
         try {
-            return sessionRepository.findAll();
+            return sessionRepository.findAll(pageable);
         } catch (Exception exception) {
             log.error("Failed to get all sessions", exception);
             throw new SkillMentorException("Failed to get all sessions", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -205,8 +204,8 @@ public class SessionServiceImpl implements SessionService {
         return sessionRepository.save(session);
     }
 
-    public List<Session> getSessionsByStudentEmail(String email) {
-        return sessionRepository.findByStudent_Email(email);
+    public Page<Session> getSessionsByStudentEmail(String email, Pageable pageable) {
+        return sessionRepository.findByStudent_Email(email, pageable);
     }
 
 }

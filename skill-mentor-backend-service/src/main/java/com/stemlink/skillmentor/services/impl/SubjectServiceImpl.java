@@ -10,10 +10,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -24,9 +24,9 @@ public class SubjectServiceImpl implements SubjectService {
     private final MentorRepository mentorRepository;
     private final ModelMapper modelMapper;
 
-    public List<Subject> getAllSubjects(){
+    public Page<Subject> getAllSubjects(Pageable pageable){
         try {
-            return subjectRepository.findAll();
+            return subjectRepository.findAll(pageable);
         } catch (Exception exception) {
             log.error("Failed to get all subjects", exception);
             throw new SkillMentorException("Failed to get all subjects", HttpStatus.INTERNAL_SERVER_ERROR);
