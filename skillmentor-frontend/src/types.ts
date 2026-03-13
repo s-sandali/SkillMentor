@@ -23,6 +23,40 @@ export interface SubjectResponse {
   mentorName: string;
 }
 
+export interface CreateMentorRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber?: string;
+  title?: string;
+  profession: string;
+  company: string;
+  experienceYears: number;
+  bio: string;
+  profileImageUrl?: string;
+  isCertified: boolean;
+  startYear: string;
+}
+
+export interface MentorResponse {
+  id: number;
+  mentorId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber?: string;
+  title?: string;
+  profession?: string;
+  company?: string;
+  experienceYears: number;
+  bio: string;
+  profileImageUrl?: string;
+  isCertified: boolean;
+  startYear: string;
+  positiveReviews: number;
+  totalEnrollments: number;
+}
+
 // Modified to match with backend MentorResponseDTO (from GET /api/v1/mentors)
 export interface Mentor {
   id: number;

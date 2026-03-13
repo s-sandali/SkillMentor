@@ -9,6 +9,7 @@ import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import AdminLayout from "@/layouts/AdminLayout";
 import AdminDashboardOverview from "@/pages/Admin/AdminDashboardOverview";
 import CreateSubjectPage from "@/pages/Admin/Subjects/CreateSubjectPage";
+import CreateMentorPage from "@/pages/Admin/Mentors/CreateMentorPage";
 import ManageMentorsPage from "@/pages/Admin/Mentors/ManageMentorsPage";
 import ManageBookingsPage from "@/pages/Admin/Bookings/ManageBookingsPage";
 
@@ -50,6 +51,7 @@ function App() {
             <Route path="subjects" element={<CreateSubjectPage />} />
             <Route path="subjects/create" element={<CreateSubjectPage />} />
             <Route path="mentors" element={<ManageMentorsPage />} />
+            <Route path="mentors/create" element={<CreateMentorPage />} />
             <Route path="bookings" element={<ManageBookingsPage />} />
           </Route>
           <Route path="*" element={<LoginPage />} />
