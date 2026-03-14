@@ -3,11 +3,13 @@ package com.stemlink.skillmentor.utils;
 import com.stemlink.skillmentor.entities.Mentor;
 import com.stemlink.skillmentor.entities.Session;
 import com.stemlink.skillmentor.entities.Student;
+import com.stemlink.skillmentor.entities.Subject;
 import com.stemlink.skillmentor.exceptions.SkillMentorException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -114,6 +116,44 @@ public class ValidationUtilsTest {
 
         assertThrows(SkillMentorException.class, () ->
                 ValidationUtils.validateStudentAvailability(student, newSessionAt, 60)
+        );
+    }
+
+    @Test
+    void validateSessionTimeInFuture_ThrowsException_WhenSessionIsInPast() {
+        Date pastSession = Date.from(Instant.now().minusSeconds(3600));
+
+        assertThrows(SkillMentorException.class, () ->
+                ValidationUtils.validateSessionTimeInFuture(pastSession)
+        );
+    }
+
+    @Test
+    void validateSubjectBelongsToMentor_ThrowsException_WhenSubjectMentorDoesNotMatch() {
+        Mentor requestedMentor = new Mentor();
+        requestedMentor.setId(10L);
+
+        Mentor actualMentor = new Mentor();
+        actualMentor.setId(20L);
+
+        Subject subject = new Subject();
+        subject.setMentor(actualMentor);
+
+        assertThrows(SkillMentorException.class, () ->
+                ValidationUtils.validateSubjectBelongsToMentor(subject, requestedMentor)
+        );
+    }
+
+    @Test
+    void validateSubjectBelongsToMentor_DoesNotThrow_WhenSubjectMentorMatches() {
+        Mentor mentor = new Mentor();
+        mentor.setId(10L);
+
+        Subject subject = new Subject();
+        subject.setMentor(mentor);
+
+        assertDoesNotThrow(() ->
+                ValidationUtils.validateSubjectBelongsToMentor(subject, mentor)
         );
     }
 }

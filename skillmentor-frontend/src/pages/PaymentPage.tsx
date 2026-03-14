@@ -49,9 +49,9 @@ export default function PaymentPage() {
       if (!token) throw new Error("Not authenticated");
 
       await enrollInSession(token, {
-        mentorId: Number(mentorId),
+        mentorId: mentorId,
         subjectId: Number(subjectId),
-        sessionAt: date,
+        sessionDateTime: date,
         durationMinutes: 60,
       });
 
@@ -65,10 +65,11 @@ export default function PaymentPage() {
         navigate("/dashboard");
       }, 2000);
     } catch (error) {
+      console.error("Enrollment error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       toast({
         title: "Error",
-        description:
-          "There was a problem scheduling your session. Please try again.",
+        description: errorMessage || "There was a problem scheduling your session. Please try again.",
         variant: "destructive",
       });
       setIsUploading(false);
