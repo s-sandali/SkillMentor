@@ -3,6 +3,7 @@ import { HeroSection } from "@/components/landing/HeroSection";
 import { ScheduleCallSection } from "@/components/landing/ScheduleCallSection";
 import { WhyChooseUsSection } from "@/components/landing/WhyChooseUsSection";
 import { MentorPreviewSection } from "@/components/landing/MentorPreviewSection";
+import { SuccessStoriesSection } from "@/components/landing/SuccessStoriesSection";
 import { Footer } from "@/components/Footer";
 
 export default function HomePage() {
@@ -15,6 +16,7 @@ export default function HomePage() {
           <ScheduleCallSection />
         </div>
         <WhyChooseUsSection />
+        <SuccessStoriesSection />
         <div className="w-full bg-muted/30">
           <MentorPreviewSection />
         </div>
