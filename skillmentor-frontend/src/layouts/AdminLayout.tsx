@@ -1,5 +1,5 @@
 import { Outlet, Navigate, Link, useLocation } from "react-router";
-import { useUser, UserButton } from "@clerk/clerk-react";
+import { useUser } from "@clerk/clerk-react";
 import { BookOpen, Users, Calendar, LayoutDashboard, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";

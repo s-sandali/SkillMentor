@@ -71,9 +71,9 @@ export async function createAdminMentor(
 export async function enrollInSession(
   token: string,
   data: {
-    mentorId: number;
+    mentorId: string;
     subjectId: number;
-    sessionAt: string;
+    sessionDateTime: string;
     durationMinutes?: number;
   },
 ): Promise<Enrollment> {
@@ -86,7 +86,9 @@ export async function enrollInSession(
 
 export async function getMyEnrollments(token: string): Promise<Enrollment[]> {
   const res = await fetchWithAuth("/api/v1/sessions/my-sessions", token);
-  return res.json();
+  const data = await res.json();
+  // Backend returns paginated response: { content: [...], ... }
+  return data.content || [];
 }
 
 export async function getAdminSessions(
