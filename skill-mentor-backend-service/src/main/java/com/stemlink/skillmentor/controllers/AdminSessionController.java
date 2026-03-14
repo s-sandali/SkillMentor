@@ -6,7 +6,9 @@ import com.stemlink.skillmentor.services.SessionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -33,7 +35,7 @@ public class AdminSessionController extends AbstractController {
             @RequestParam(name = "paymentStatus", required = false) String paymentStatus,
             @RequestParam(name = "sessionStatus", required = false) String sessionStatus,
             Pageable pageable) {
-        return sendOkResponse(sessionService.getAdminSessions(search, paymentStatus, sessionStatus, pageable));
+        return sendOkResponse(sessionService.getAdminSessions(search, paymentStatus, sessionStatus, normalizePageable(pageable)));
     }
 
     @PatchMapping("{id}/confirm-payment")
@@ -51,5 +53,26 @@ public class AdminSessionController extends AbstractController {
             @PathVariable("id") Long id,
             @Valid @RequestBody AdminMeetingLinkRequestDTO requestDTO) {
         return sendOkResponse(sessionService.updateMeetingLink(id, requestDTO));
+    }
+
+    private Pageable normalizePageable(Pageable pageable) {
+        Sort normalizedSort = pageable.getSort().isSorted()
+                ? Sort.by(pageable.getSort().stream()
+                .map(order -> new Sort.Order(order.getDirection(), mapSortProperty(order.getProperty())))
+                .toList())
+                : Sort.by(Sort.Order.desc("sessionAt"));
+
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), normalizedSort);
+    }
+
+    private String mapSortProperty(String property) {
+        return switch (property) {
+            case "date" -> "sessionAt";
+            case "duration" -> "durationMinutes";
+            case "studentName" -> "student.firstName";
+            case "mentorName" -> "mentor.firstName";
+            case "subjectName" -> "subject.name";
+            default -> property;
+        };
     }
 }

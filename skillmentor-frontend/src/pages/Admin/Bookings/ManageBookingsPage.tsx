@@ -46,7 +46,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-type SortKey = "date" | "duration" | "studentName" | "mentorName" | "subjectName";
+type SortKey =
+  | "sessionAt"
+  | "durationMinutes"
+  | "student.firstName"
+  | "mentor.firstName"
+  | "subject.name";
 
 const PAGE_SIZE = 10;
 
@@ -105,7 +110,7 @@ export default function ManageBookingsPage() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-  const [sort, setSort] = useState("date,desc");
+  const [sort, setSort] = useState("sessionAt,desc");
   const [selectedBooking, setSelectedBooking] = useState<AdminSession | null>(null);
   const [meetingLinkDraft, setMeetingLinkDraft] = useState("");
   const [activeDialog, setActiveDialog] = useState<"payment" | "complete" | "meeting-link" | null>(null);
@@ -364,7 +369,7 @@ export default function ManageBookingsPage() {
                   <TableHead>
                     <button
                       type="button"
-                      onClick={() => toggleSort("studentName")}
+                      onClick={() => toggleSort("student.firstName")}
                       className="inline-flex items-center gap-1"
                     >
                       Student Name
@@ -374,7 +379,7 @@ export default function ManageBookingsPage() {
                   <TableHead>
                     <button
                       type="button"
-                      onClick={() => toggleSort("mentorName")}
+                      onClick={() => toggleSort("mentor.firstName")}
                       className="inline-flex items-center gap-1"
                     >
                       Mentor
@@ -384,7 +389,7 @@ export default function ManageBookingsPage() {
                   <TableHead>
                     <button
                       type="button"
-                      onClick={() => toggleSort("subjectName")}
+                      onClick={() => toggleSort("subject.name")}
                       className="inline-flex items-center gap-1"
                     >
                       Subject
@@ -394,7 +399,7 @@ export default function ManageBookingsPage() {
                   <TableHead>
                     <button
                       type="button"
-                      onClick={() => toggleSort("date")}
+                      onClick={() => toggleSort("sessionAt")}
                       className="inline-flex items-center gap-1"
                     >
                       Date
@@ -404,7 +409,7 @@ export default function ManageBookingsPage() {
                   <TableHead>
                     <button
                       type="button"
-                      onClick={() => toggleSort("duration")}
+                      onClick={() => toggleSort("durationMinutes")}
                       className="inline-flex items-center gap-1"
                     >
                       Duration

@@ -24,7 +24,12 @@ import org.springframework.stereotype.Service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
+
+import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -180,11 +185,11 @@ public class SessionServiceImpl implements SessionService {
     public Page<AdminSessionResponseDTO> getAdminSessions(String search, String paymentStatus, String sessionStatus, Pageable pageable) {
         try {
             String normalizedSearch = normalizeSearch(search);
-            String normalizedPaymentStatus = normalizeSearch(paymentStatus);
-            String normalizedSessionStatus = normalizeSearch(sessionStatus);
+            String normalizedPaymentStatus = normalizePaymentStatus(paymentStatus);
+            SessionStatus normalizedSessionStatus = normalizeSessionStatus(sessionStatus);
 
             return sessionRepository
-                    .findAdminSessions(normalizedSearch, normalizedPaymentStatus, normalizedSessionStatus, pageable)
+                    .findAll(buildAdminSessionSpecification(normalizedSearch, normalizedPaymentStatus, normalizedSessionStatus), pageable)
                     .map(this::toAdminSessionResponseDTO);
         } catch (Exception exception) {
             log.error("Failed to fetch admin sessions", exception);
@@ -311,6 +316,47 @@ public class SessionServiceImpl implements SessionService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizePaymentStatus(String value) {
+        String normalized = normalizeSearch(value);
+        return normalized == null ? null : normalized.toLowerCase();
+    }
+
+    private SessionStatus normalizeSessionStatus(String value) {
+        String normalized = normalizeSearch(value);
+        if (normalized == null) {
+            return null;
+        }
+
+        try {
+            return SessionStatus.valueOf(normalized.toUpperCase());
+        } catch (IllegalArgumentException exception) {
+            throw new SkillMentorException("Invalid session status", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    private Specification<Session> buildAdminSessionSpecification(
+            String search,
+            String paymentStatus,
+            SessionStatus sessionStatus) {
+        return (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (search != null) {
+                predicates.add(criteriaBuilder.like(root.get("id").as(String.class), "%" + search + "%"));
+            }
+
+            if (paymentStatus != null) {
+                predicates.add(criteriaBuilder.equal(criteriaBuilder.lower(root.get("paymentStatus")), paymentStatus));
+            }
+
+            if (sessionStatus != null) {
+                predicates.add(criteriaBuilder.equal(root.get("sessionStatus"), sessionStatus));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
+        };
     }
 
 }

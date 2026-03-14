@@ -2,6 +2,7 @@ import type {
   AdminSession,
   CreateMentorRequest,
   CreateSubjectRequest,
+  DashboardResponse,
   Enrollment,
   Mentor,
   MentorResponse,
@@ -215,3 +216,11 @@ export async function deleteSubject(token: string, id: number): Promise<void> {
   });
 }
 
+// --------------------------------
+// Admin Dashboard API
+// --------------------------------
+
+export async function getAdminDashboard(token: string): Promise<DashboardResponse> {
+  const res = await fetchWithAuth("/api/v1/admin/dashboard", token);
+  return res.json();
+}
