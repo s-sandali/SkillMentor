@@ -52,7 +52,7 @@ export default function AdminDashboardOverview() {
       {/* Greeting Section */}
       <section className="mb-6 space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">
-          Welcome back, {user?.firstName || "Admin"} 👋
+          Welcome back, {user?.firstName || "Admin"} 
         </h2>
         <p className="text-muted-foreground text-lg">
           Here's what's happening on SkillMentor today.
