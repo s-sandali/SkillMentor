@@ -1,6 +1,7 @@
 package com.stemlink.skillmentor.services;
 
 import com.stemlink.skillmentor.dto.AdminMeetingLinkRequestDTO;
+import com.stemlink.skillmentor.dto.CreateSessionRequest;
 import com.stemlink.skillmentor.dto.SessionDTO;
 import com.stemlink.skillmentor.dto.response.AdminSessionResponseDTO;
 import com.stemlink.skillmentor.entities.Session;
@@ -22,6 +23,6 @@ public interface SessionService {
     AdminSessionResponseDTO updateMeetingLink(Long id, AdminMeetingLinkRequestDTO requestDTO);
 
     // Frontend enrollment flow — student is resolved from the Clerk JWT
-    Session enrollSession(UserPrincipal userPrincipal, SessionDTO sessionDTO);
+    Session enrollSession(UserPrincipal userPrincipal, CreateSessionRequest request);
     Page<Session> getSessionsByStudentEmail(String email, Pageable pageable);
 }

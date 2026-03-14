@@ -1,6 +1,7 @@
 package com.stemlink.skillmentor.controllers;
 
 
+import com.stemlink.skillmentor.dto.CreateSessionRequest;
 import com.stemlink.skillmentor.dto.SessionDTO;
 import com.stemlink.skillmentor.dto.response.SessionResponseDTO;
 import com.stemlink.skillmentor.entities.Session;
@@ -62,12 +63,12 @@ public class SessionController extends AbstractController {
 
     // Enrollment endpoint for students to enroll in a session
     @PostMapping("/enroll")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<Session> enrollSession(
-            @Valid @RequestBody SessionDTO sessionDTO,
+            @Valid @RequestBody CreateSessionRequest request,
             Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        Session session = sessionService.enrollSession(userPrincipal, sessionDTO);
+        Session session = sessionService.enrollSession(userPrincipal, request);
         return sendCreatedResponse(session);
     }
 

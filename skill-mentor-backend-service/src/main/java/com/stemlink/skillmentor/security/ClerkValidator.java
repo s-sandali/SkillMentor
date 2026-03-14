@@ -17,6 +17,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.stemlink.skillmentor.constants.UserRoles.ROLE_STUDENT;
+
 @Slf4j
 public class ClerkValidator implements TokenValidator {
 
@@ -88,11 +90,10 @@ public class ClerkValidator implements TokenValidator {
             if (decodedJWT.getClaim("roles") != null && !decodedJWT.getClaim("roles").isNull()) {
                 List<String> roles = decodedJWT.getClaim("roles").asList(String.class);
                 if (roles != null && !roles.isEmpty()) {
-                    return roles.stream()
-                            .map(String::trim)
-                            .filter(role -> !role.isBlank())
-                            .map(role -> role.toUpperCase(Locale.ROOT))
-                            .collect(Collectors.toList());
+                    List<String> normalizedRoles = normalizeRoles(roles);
+                    if (!normalizedRoles.isEmpty()) {
+                        return normalizedRoles;
+                    }
                 }
 
                 // 2) roles claim as single string
@@ -116,23 +117,38 @@ public class ClerkValidator implements TokenValidator {
                 if (publicMetadata != null && publicMetadata.containsKey("role")) {
                     Object roleObj = publicMetadata.get("role");
                     if (roleObj instanceof String) {
-                        return Collections.singletonList(((String) roleObj).trim().toUpperCase(Locale.ROOT));
+                        String normalizedRole = ((String) roleObj).trim();
+                        if (!normalizedRole.isBlank()) {
+                            return Collections.singletonList(normalizedRole.toUpperCase(Locale.ROOT));
+                        }
                     } else if (roleObj instanceof List<?>) {
-                        return ((List<?>) roleObj).stream()
+                        List<String> normalizedRoles = ((List<?>) roleObj).stream()
                                 .map(Object::toString)
                                 .map(String::trim)
                                 .filter(role -> !role.isBlank())
                                 .map(role -> role.toUpperCase(Locale.ROOT))
                                 .collect(Collectors.toList());
+                        if (!normalizedRoles.isEmpty()) {
+                            return normalizedRoles;
+                        }
                     }
                 }
             }
 
-            return null;
+            log.debug("No explicit Clerk role found for subject {}; defaulting to {}", decodedJWT.getSubject(), ROLE_STUDENT);
+            return Collections.singletonList(ROLE_STUDENT);
         } catch (Exception e) {
             log.error("Error extracting roles: {}", e.getMessage());
             return null;
         }
+    }
+
+    private List<String> normalizeRoles(List<String> roles) {
+        return roles.stream()
+                .map(String::trim)
+                .filter(role -> !role.isBlank())
+                .map(role -> role.toUpperCase(Locale.ROOT))
+                .collect(Collectors.toList());
     }
 
     @Override

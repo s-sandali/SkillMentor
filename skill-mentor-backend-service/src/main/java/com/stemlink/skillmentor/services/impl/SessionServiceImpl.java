@@ -1,11 +1,13 @@
 package com.stemlink.skillmentor.services.impl;
 
 import com.stemlink.skillmentor.dto.AdminMeetingLinkRequestDTO;
+import com.stemlink.skillmentor.dto.CreateSessionRequest;
 import com.stemlink.skillmentor.entities.Session;
 import com.stemlink.skillmentor.entities.SessionStatus;
 import com.stemlink.skillmentor.entities.Student;
 import com.stemlink.skillmentor.entities.Mentor;
 import com.stemlink.skillmentor.entities.Subject;
+import com.stemlink.skillmentor.exceptions.BookingConflictException;
 import com.stemlink.skillmentor.exceptions.SkillMentorException;
 import com.stemlink.skillmentor.repositories.SessionRepository;
 import com.stemlink.skillmentor.repositories.StudentRepository;
@@ -48,16 +50,14 @@ public class SessionServiceImpl implements SessionService {
             Student student = studentRepository.findById(sessionDTO.getStudentId()).orElseThrow(
                     () -> new SkillMentorException("Student not found", HttpStatus.NOT_FOUND)
             );
-            Mentor mentor = mentorRepository.findByMentorId(String.valueOf(sessionDTO.getMentorId())).orElseThrow(
+            Mentor mentor = mentorRepository.findByMentorId(sessionDTO.getMentorId()).orElseThrow(
                     () -> new SkillMentorException("Mentor not found", HttpStatus.NOT_FOUND)
             );
             Subject subject = subjectRepository.findById(sessionDTO.getSubjectId()).orElseThrow(
                     () -> new SkillMentorException("Subject not found", HttpStatus.NOT_FOUND)
             );
 
-            // Checking availability
-            ValidationUtils.validateMentorAvailability(mentor, sessionDTO.getSessionAt(), sessionDTO.getDurationMinutes());
-            ValidationUtils.validateStudentAvailability(student, sessionDTO.getSessionAt(), sessionDTO.getDurationMinutes());
+            validateSessionCreation(student, mentor, subject, sessionDTO.getSessionAt(), sessionDTO.getDurationMinutes());
 
 
             // Create and populate the Session entity
@@ -128,7 +128,7 @@ public class SessionServiceImpl implements SessionService {
                 session.setStudent(student);
             }
             if (updatedSessionDTO.getMentorId() != null) {
-                Mentor mentor = mentorRepository.findByMentorId(String.valueOf(updatedSessionDTO.getMentorId()))
+                Mentor mentor = mentorRepository.findByMentorId(updatedSessionDTO.getMentorId())
                         .orElseThrow(() -> new SkillMentorException("Mentor not found", HttpStatus.NOT_FOUND));
                 session.setMentor(mentor);
             }
@@ -251,7 +251,7 @@ public class SessionServiceImpl implements SessionService {
         }
     }
 
-    public Session enrollSession(UserPrincipal userPrincipal, SessionDTO sessionDTO) {
+    public Session enrollSession(UserPrincipal userPrincipal, CreateSessionRequest request) {
         // Find student by email from JWT, or auto-create user on first enrollment
         Student student = studentRepository.findByEmail(userPrincipal.getEmail())
                 .orElseGet(() -> {
@@ -263,17 +263,19 @@ public class SessionServiceImpl implements SessionService {
                     return studentRepository.save(s);
                 });
 
-        Mentor mentor = mentorRepository.findByMentorId(String.valueOf(sessionDTO.getMentorId()))
-                .orElseThrow(() -> new SkillMentorException("Mentor not found with mentorId: " + sessionDTO.getMentorId(), HttpStatus.NOT_FOUND));
-        Subject subject = subjectRepository.findById(sessionDTO.getSubjectId())
-                .orElseThrow(() -> new SkillMentorException("Subject not found with id: " + sessionDTO.getSubjectId(), HttpStatus.NOT_FOUND));
+        Mentor mentor = mentorRepository.findByMentorId(request.getMentorId().trim())
+                .orElseThrow(() -> new SkillMentorException("Mentor not found with mentorId: " + request.getMentorId(), HttpStatus.NOT_FOUND));
+        Subject subject = subjectRepository.findById(request.getSubjectId())
+                .orElseThrow(() -> new SkillMentorException("Subject not found with id: " + request.getSubjectId(), HttpStatus.NOT_FOUND));
+
+        validateEnrollmentRequest(student, mentor, subject, request);
 
         Session session = new Session();
         session.setStudent(student);
         session.setMentor(mentor);
         session.setSubject(subject);
-        session.setSessionAt(sessionDTO.getSessionAt());
-        session.setDurationMinutes(sessionDTO.getDurationMinutes() != null ? sessionDTO.getDurationMinutes() : 60);
+        session.setSessionAt(request.getSessionDateTime());
+        session.setDurationMinutes(request.getDurationMinutes() != null ? request.getDurationMinutes() : 60);
         session.setSessionStatus(SessionStatus.SCHEDULED);
         session.setPaymentStatus("pending");
 
@@ -357,6 +359,24 @@ public class SessionServiceImpl implements SessionService {
 
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         };
+    }
+
+    private void validateEnrollmentRequest(Student student, Mentor mentor, Subject subject, CreateSessionRequest request) {
+        try {
+            int durationMinutes = request.getDurationMinutes() != null ? request.getDurationMinutes() : 60;
+            validateSessionCreation(student, mentor, subject, request.getSessionDateTime(), durationMinutes);
+        } catch (BookingConflictException exception) {
+            log.warn("Booking validation failed for student {} and mentor {}: {}",
+                    student.getEmail(), mentor.getMentorId(), exception.getMessage());
+            throw exception;
+        }
+    }
+
+    private void validateSessionCreation(Student student, Mentor mentor, Subject subject, java.util.Date sessionDateTime, Integer durationMinutes) {
+        ValidationUtils.validateSessionTimeInFuture(sessionDateTime);
+        ValidationUtils.validateSubjectBelongsToMentor(subject, mentor);
+        ValidationUtils.validateMentorAvailability(mentor, sessionDateTime, durationMinutes);
+        ValidationUtils.validateStudentAvailability(student, sessionDateTime, durationMinutes);
     }
 
 }
