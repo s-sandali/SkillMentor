@@ -107,3 +107,16 @@ export interface User {
   name: string;
   email: string;
 }
+
+export interface Activity {
+  type: "booking" | "payment" | "mentor" | "subject";
+  message: string;
+  timestamp: string;
+}
+
+export interface DashboardResponse {
+  totalSubjects: number;
+  totalMentors: number;
+  totalBookings: number;
+  recentActivities: Activity[];
+}
