@@ -2,6 +2,8 @@ package com.stemlink.skillmentor.dto.response;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class MentorResponseDTO {
     private Long id;
@@ -20,4 +22,5 @@ public class MentorResponseDTO {
     private String startYear;
     private Integer positiveReviews;
     private Integer totalEnrollments;
+    private List<SubjectResponseDTO> subjects;
 }
