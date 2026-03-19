@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -133,7 +134,7 @@ export function MentorCard({ mentor }: MentorCardProps) {
           </div>
         </div>
 
-        <div className="p-6 pt-0">
+        <div className="p-6 pt-0 flex flex-col gap-2">
           <Button
             onClick={handleSchedule}
             className="w-full bg-black text-white hover:bg-black/90"
@@ -142,6 +143,11 @@ export function MentorCard({ mentor }: MentorCardProps) {
           >
             {hasSubjects ? "Schedule a session" : "No courses available"}
           </Button>
+          <Link to={`/mentors/${mentor.id}`} className="w-full">
+            <Button variant="outline" className="w-full">
+              View Profile
+            </Button>
+          </Link>
         </div>
       </Card>
 
