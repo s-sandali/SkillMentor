@@ -25,4 +25,10 @@ public interface SessionRepository extends JpaRepository<Session, Long>, JpaSpec
     java.util.Optional<Session> findById(Long id);
 
     Page<Session> findByStudent_Email(String email, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"student", "subject"})
+    java.util.List<Session> findByMentor_Id(Long mentorId);
+
+    @EntityGraph(attributePaths = {"student"})
+    java.util.List<Session> findByMentor_IdAndStudentRatingIsNotNull(Long mentorId);
 }
