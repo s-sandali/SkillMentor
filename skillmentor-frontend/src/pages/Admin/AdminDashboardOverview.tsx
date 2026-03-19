@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Users, BookOpen, CalendarCheck, Loader2, UserPlus, Calendar } from "lucide-react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { getAdminDashboard } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 import type { Activity } from "@/types";
 import RecentActivity from "@/components/RecentActivity";
 
@@ -12,6 +13,7 @@ export default function AdminDashboardOverview() {
   const navigate = useNavigate();
   const { getToken } = useAuth();
   const { user } = useUser();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     subjects: 0,
@@ -38,14 +40,19 @@ export default function AdminDashboardOverview() {
 
         setRecentActivities(dashboardData.recentActivities);
       } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
+        toast({
+          title: "Failed to load dashboard",
+          description:
+            error instanceof Error ? error.message : "Unable to fetch dashboard data.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     }
 
     fetchDashboard();
-  }, [getToken]);
+  }, [getToken, toast]);
 
   return (
     <div className="space-y-8">

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Search, ArrowUpDown, Link2, BadgeCheck, CircleCheckBig } from "lucide-react";
+import { Search, ArrowUpDown, Link2, BadgeCheck, CircleCheckBig, CalendarIcon, X } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
 
 import {
@@ -107,6 +107,8 @@ export default function ManageBookingsPage() {
   const [search, setSearch] = useState("");
   const [paymentStatus, setPaymentStatus] = useState("all");
   const [sessionStatus, setSessionStatus] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -141,6 +143,8 @@ export default function ManageBookingsPage() {
           search: search || undefined,
           paymentStatus: paymentStatus === "all" ? undefined : paymentStatus,
           sessionStatus: sessionStatus === "all" ? undefined : sessionStatus,
+          dateFrom: dateFrom || undefined,
+          dateTo: dateTo || undefined,
           sort,
         });
 
@@ -160,7 +164,7 @@ export default function ManageBookingsPage() {
     };
 
     loadBookings();
-  }, [getToken, page, paymentStatus, search, sessionStatus, sort, toast]);
+  }, [getToken, page, paymentStatus, search, sessionStatus, dateFrom, dateTo, sort, toast]);
 
   const summary = useMemo(() => {
     if (totalElements === 0) {
@@ -313,13 +317,13 @@ export default function ManageBookingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_220px_220px]">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_200px_200px]">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Search by session, student, mentor, or subject"
+                placeholder="Search by student or mentor name"
                 className="pl-9"
               />
             </div>
@@ -359,6 +363,64 @@ export default function ManageBookingsPage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Date Range Filter */}
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <CalendarIcon className="size-4" />
+              Date range
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <label className="text-sm text-muted-foreground" htmlFor="dateFrom">
+                  From
+                </label>
+                <Input
+                  id="dateFrom"
+                  type="date"
+                  value={dateFrom}
+                  max={dateTo || undefined}
+                  onChange={(e) => {
+                    setDateFrom(e.target.value);
+                    setPage(0);
+                  }}
+                  className="w-40"
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <label className="text-sm text-muted-foreground" htmlFor="dateTo">
+                  To
+                </label>
+                <Input
+                  id="dateTo"
+                  type="date"
+                  value={dateTo}
+                  min={dateFrom || undefined}
+                  onChange={(e) => {
+                    setDateTo(e.target.value);
+                    setPage(0);
+                  }}
+                  className="w-40"
+                />
+              </div>
+              {(dateFrom || dateTo) && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setDateFrom("");
+                    setDateTo("");
+                    setPage(0);
+                  }}
+                  className="h-8 gap-1 text-muted-foreground"
+                >
+                  <X className="size-3.5" />
+                  Clear dates
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="rounded-lg border">
@@ -455,33 +517,48 @@ export default function ManageBookingsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex flex-wrap justify-end gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openDialog("payment", booking)}
-                          >
-                            <BadgeCheck className="mr-1 size-4" />
-                            Confirm Payment
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openDialog("complete", booking)}
-                          >
-                            <CircleCheckBig className="mr-1 size-4" />
-                            Mark Complete
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openDialog("meeting-link", booking)}
-                          >
-                            <Link2 className="mr-1 size-4" />
-                            Add Meeting Link
-                          </Button>
+                          {booking.paymentStatus === "pending" && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openDialog("payment", booking)}
+                            >
+                              <BadgeCheck className="mr-1 size-4" />
+                              Confirm Payment
+                            </Button>
+                          )}
+                          {booking.paymentStatus === "accepted" &&
+                            booking.sessionStatus !== "COMPLETED" &&
+                            booking.sessionStatus !== "CANCELLED" && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openDialog("complete", booking)}
+                              >
+                                <CircleCheckBig className="mr-1 size-4" />
+                                Mark Complete
+                              </Button>
+                            )}
+                          {booking.sessionStatus !== "COMPLETED" &&
+                            booking.sessionStatus !== "CANCELLED" && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openDialog("meeting-link", booking)}
+                              >
+                                <Link2 className="mr-1 size-4" />
+                                {booking.meetingLink ? "Update Link" : "Add Meeting Link"}
+                              </Button>
+                            )}
+                          {booking.sessionStatus === "COMPLETED" ||
+                          booking.sessionStatus === "CANCELLED" ? (
+                            <span className="text-xs text-muted-foreground italic">
+                              No actions
+                            </span>
+                          ) : null}
                         </div>
                       </TableCell>
                     </TableRow>
