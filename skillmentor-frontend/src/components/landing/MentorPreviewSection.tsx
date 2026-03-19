@@ -17,11 +17,11 @@ export function MentorPreviewSection() {
   return (
     <section 
       aria-label="Mentor List"
-      className="max-w-7xl mx-auto px-6 py-16 space-y-8"
+      className="relative max-w-7xl mx-auto px-6 py-16 space-y-8"
     >
-      <div className="text-center md:text-left space-y-2">
-         <h2 className="text-3xl md:text-4xl font-bold">Browse Mentors</h2>
-         <p className="text-muted-foreground">Find the perfect mentor for your upskilling journey.</p>
+      <div className="text-center md:text-left space-y-2 relative z-10">
+         <h2 className="text-3xl md:text-4xl font-bold">Browse Modules</h2>
+         <p className="text-muted-foreground">Find the perfect module for your upskilling journey.</p>
       </div>
 
       {loading ? (

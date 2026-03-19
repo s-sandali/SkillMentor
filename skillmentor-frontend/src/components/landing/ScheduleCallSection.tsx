@@ -4,9 +4,9 @@ export function ScheduleCallSection() {
   return (
     <section 
       aria-label="Schedule a Call"
-      className="max-w-7xl mx-auto px-6 py-16 flex flex-col items-center justify-center text-center space-y-6"
+      className="relative max-w-7xl mx-auto px-6 py-16 flex flex-col items-center justify-center text-center space-y-6"
     >
-      <h2 className="lg:text-5xl md:text-4xl sm:text-3xl text-3xl font-bold tracking-tight">
+      <h2 className="lg:text-5xl md:text-4xl sm:text-3xl text-3xl font-bold tracking-tight relative z-10">
         Schedule a Call
       </h2>
       <p className="max-w-2xl text-gray-500 md:text-lg dark:text-gray-400">

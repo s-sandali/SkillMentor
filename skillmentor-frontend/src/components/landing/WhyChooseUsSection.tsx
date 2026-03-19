@@ -5,9 +5,9 @@ export function WhyChooseUsSection() {
   return (
     <section
       aria-label="Why Choose SkillMentor"
-      className="max-w-7xl mx-auto px-6 py-20"
+      className="relative max-w-7xl mx-auto px-6 py-20"
     >
-      <div className="text-center mb-16 space-y-4">
+      <div className="text-center mb-16 space-y-4 relative z-10">
         <h2 className="text-4xl md:text-5xl font-bold tracking-tight">Why choose SkillMentor?</h2>
         <p className="text-gray-600 md:text-lg dark:text-gray-400 max-w-2xl mx-auto">
           Designed for better learning. Built for real success. Designed for better learning. Built for real success.
