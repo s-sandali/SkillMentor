@@ -260,6 +260,7 @@ public class SessionServiceImpl implements SessionService {
         }
     }
 
+    @Transactional
     public Session enrollSession(UserPrincipal userPrincipal, CreateSessionRequest request) {
         // Find student by email from JWT, or auto-create user on first enrollment
         Student student = studentRepository.findByEmail(userPrincipal.getEmail())
@@ -412,7 +413,7 @@ public class SessionServiceImpl implements SessionService {
         try {
             int durationMinutes = request.getDurationMinutes() != null ? request.getDurationMinutes() : 60;
             validateSessionCreation(student, mentor, subject, request.getSessionDateTime(), durationMinutes);
-        } catch (BookingConflictException exception) {
+        } catch (SkillMentorException exception) {
             log.warn("Booking validation failed for student {} and mentor {}: {}",
                     student.getEmail(), mentor.getMentorId(), exception.getMessage());
             throw exception;
@@ -422,6 +423,7 @@ public class SessionServiceImpl implements SessionService {
     private void validateSessionCreation(Student student, Mentor mentor, Subject subject, java.util.Date sessionDateTime, Integer durationMinutes) {
         ValidationUtils.validateSessionTimeInFuture(sessionDateTime);
         ValidationUtils.validateSubjectBelongsToMentor(subject, mentor);
+        ValidationUtils.validateDuplicateSubjectBooking(student, subject, sessionDateTime, durationMinutes);
         ValidationUtils.validateMentorAvailability(mentor, sessionDateTime, durationMinutes);
         ValidationUtils.validateStudentAvailability(student, sessionDateTime, durationMinutes);
     }
