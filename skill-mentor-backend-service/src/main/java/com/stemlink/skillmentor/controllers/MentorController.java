@@ -1,6 +1,8 @@
 package com.stemlink.skillmentor.controllers;
 
 import com.stemlink.skillmentor.dto.MentorDTO;
+import com.stemlink.skillmentor.dto.response.MentorProfileResponseDTO;
+import com.stemlink.skillmentor.dto.response.MentorResponseDTO;
 import com.stemlink.skillmentor.entities.Mentor;
 import com.stemlink.skillmentor.security.UserPrincipal;
 import com.stemlink.skillmentor.services.MentorService;
@@ -15,8 +17,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 import static com.stemlink.skillmentor.constants.UserRoles.*;
 
 @RestController
@@ -30,23 +30,29 @@ public class MentorController extends AbstractController {
     private final ModelMapper modelMapper;
 
     @GetMapping
-    public ResponseEntity<Page<Mentor>> getAllMentors(
+    public ResponseEntity<Page<MentorResponseDTO>> getAllMentors(
             @RequestParam(name = "name", required = false) String name,
             Pageable pageable) {
-        Page<Mentor> mentors = mentorService.getAllMentors(name, pageable);
-        return sendOkResponse(mentors);
+        return sendOkResponse(mentorService.getAllMentors(name, pageable));
     }
 
     @GetMapping("{id}")
-    public ResponseEntity<Mentor> getMentorById(@PathVariable Long id) {
-        Mentor mentor = mentorService.getMentorById(id);
-        return sendOkResponse(mentor);
+    public ResponseEntity<MentorResponseDTO> getMentorById(@PathVariable Long id) {
+        return sendOkResponse(mentorService.getMentorById(id));
+    }
+
+    @GetMapping("{mentorId}/profile")
+    public ResponseEntity<MentorProfileResponseDTO> getMentorProfile(@PathVariable Long mentorId) {
+        MentorProfileResponseDTO profile = mentorService.getMentorProfile(mentorId);
+        return sendOkResponse(profile);
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('" + ROLE_ADMIN + "', '" + ROLE_MENTOR + "')")
-    public ResponseEntity<Mentor> createMentor(@Valid @RequestBody MentorDTO mentorDTO, Authentication authentication) {
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+    public ResponseEntity<MentorResponseDTO> createMentor(@Valid @RequestBody MentorDTO mentorDTO, Authentication authentication) {
+        if (!(authentication.getPrincipal() instanceof UserPrincipal userPrincipal)) {
+            throw new com.stemlink.skillmentor.exceptions.SkillMentorException("Invalid authentication principal", org.springframework.http.HttpStatus.UNAUTHORIZED);
+        }
 
         Mentor mentor = modelMapper.map(mentorDTO, Mentor.class);
 
@@ -62,22 +68,20 @@ public class MentorController extends AbstractController {
         }
         // else: ADMIN provided mentorId (+ firstName/lastName/email) in body → ModelMapper already mapped them
 
-        Mentor createdMentor = mentorService.createNewMentor(mentor);
-
-        return sendCreatedResponse(createdMentor);
+        return sendCreatedResponse(mentorService.createNewMentor(mentor));
     }
 
     @PutMapping("{id}")
     @PreAuthorize("hasAnyRole('" + ROLE_ADMIN + "', '" + ROLE_MENTOR + "')")
-    public ResponseEntity<Mentor> updateMentor(@PathVariable Long id, @Valid @RequestBody MentorDTO updatedMentorDTO, Authentication authentication) {
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+    public ResponseEntity<MentorResponseDTO> updateMentor(@PathVariable Long id, @Valid @RequestBody MentorDTO updatedMentorDTO, Authentication authentication) {
+        if (!(authentication.getPrincipal() instanceof UserPrincipal userPrincipal)) {
+            throw new com.stemlink.skillmentor.exceptions.SkillMentorException("Invalid authentication principal", org.springframework.http.HttpStatus.UNAUTHORIZED);
+        }
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        
-        Mentor mentor = modelMapper.map(updatedMentorDTO, Mentor.class);
-        Mentor updatedMentor = mentorService.updateMentorById(id, mentor, userPrincipal.getId(), isAdmin);
-        return sendOkResponse(updatedMentor);
 
+        Mentor mentor = modelMapper.map(updatedMentorDTO, Mentor.class);
+        return sendOkResponse(mentorService.updateMentorById(id, mentor, userPrincipal.getId(), isAdmin));
     }
 
     @DeleteMapping("{id}")

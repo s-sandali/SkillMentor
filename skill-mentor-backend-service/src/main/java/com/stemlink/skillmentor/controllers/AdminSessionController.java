@@ -34,8 +34,10 @@ public class AdminSessionController extends AbstractController {
             @RequestParam(name = "search", required = false) String search,
             @RequestParam(name = "paymentStatus", required = false) String paymentStatus,
             @RequestParam(name = "sessionStatus", required = false) String sessionStatus,
+            @RequestParam(name = "dateFrom", required = false) String dateFrom,
+            @RequestParam(name = "dateTo", required = false) String dateTo,
             Pageable pageable) {
-        return sendOkResponse(sessionService.getAdminSessions(search, paymentStatus, sessionStatus, normalizePageable(pageable)));
+        return sendOkResponse(sessionService.getAdminSessions(search, paymentStatus, sessionStatus, dateFrom, dateTo, normalizePageable(pageable)));
     }
 
     @PatchMapping("{id}/confirm-payment")
