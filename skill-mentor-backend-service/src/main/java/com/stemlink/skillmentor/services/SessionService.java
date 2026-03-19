@@ -17,7 +17,7 @@ public interface SessionService {
     Session getSessionById(Long id);
     Session updateSessionById(Long id, SessionDTO updatedSessionDTO);
     void deleteSession(Long id);
-    Page<AdminSessionResponseDTO> getAdminSessions(String search, String paymentStatus, String sessionStatus, Pageable pageable);
+    Page<AdminSessionResponseDTO> getAdminSessions(String search, String paymentStatus, String sessionStatus, String dateFrom, String dateTo, Pageable pageable);
     AdminSessionResponseDTO confirmPayment(Long id);
     AdminSessionResponseDTO completeSession(Long id);
     AdminSessionResponseDTO updateMeetingLink(Long id, AdminMeetingLinkRequestDTO requestDTO);
