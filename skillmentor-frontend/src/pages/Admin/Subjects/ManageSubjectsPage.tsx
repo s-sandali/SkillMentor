@@ -237,24 +237,30 @@ export default function ManageSubjectsPage() {
             const title = subject.name ?? subject.subjectName ?? "Untitled Subject";
 
             return (
-              <Card key={subject.id} className="overflow-hidden">
-                {subject.courseImageUrl ? (
-                  <img
-                    src={subject.courseImageUrl}
-                    alt={title}
-                    className="h-44 w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-44 items-center justify-center bg-muted text-3xl font-semibold">
-                    {title.charAt(0)}
-                  </div>
-                )}
-                <CardHeader>
-                  <CardTitle>{title}</CardTitle>
-                  <CardDescription>Subject ID: {subject.id}</CardDescription>
+              <Card key={subject.id} className="overflow-hidden border-border/70 bg-card/95 shadow-sm">
+                <div className="border-b bg-muted/35">
+                  {subject.courseImageUrl ? (
+                    <div className="flex min-h-56 items-center justify-center p-4">
+                      <img
+                        src={subject.courseImageUrl}
+                        alt={title}
+                        className="max-h-56 w-full rounded-xl object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex min-h-56 items-center justify-center bg-muted text-3xl font-semibold">
+                      {title.charAt(0)}
+                    </div>
+                  )}
+                </div>
+                <CardHeader className="pb-3">
+                  <CardTitle className="line-clamp-2 text-2xl">{title}</CardTitle>
+                  <CardDescription>
+                    Subject details and admin actions
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-sm leading-6 text-muted-foreground">
+                <CardContent className="flex h-full flex-col space-y-4">
+                  <p className="min-h-24 text-sm leading-7 text-muted-foreground">
                     {subject.description}
                   </p>
                   <div className="flex gap-2 pt-1">
@@ -262,6 +268,7 @@ export default function ManageSubjectsPage() {
                       type="button"
                       size="sm"
                       variant="outline"
+                      className="flex-1"
                       onClick={() => openEditDialog(subject)}
                     >
                       <Pencil className="mr-1 size-4" />
@@ -271,6 +278,7 @@ export default function ManageSubjectsPage() {
                       type="button"
                       size="sm"
                       variant="destructive"
+                      className="flex-1"
                       onClick={() => setDeletingSubject(subject)}
                     >
                       <Trash2 className="mr-1 size-4" />
