@@ -29,8 +29,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -182,15 +187,19 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    public Page<AdminSessionResponseDTO> getAdminSessions(String search, String paymentStatus, String sessionStatus, Pageable pageable) {
+    public Page<AdminSessionResponseDTO> getAdminSessions(String search, String paymentStatus, String sessionStatus, String dateFrom, String dateTo, Pageable pageable) {
         try {
             String normalizedSearch = normalizeSearch(search);
             String normalizedPaymentStatus = normalizePaymentStatus(paymentStatus);
             SessionStatus normalizedSessionStatus = normalizeSessionStatus(sessionStatus);
+            Date parsedDateFrom = parseDate(dateFrom, false);
+            Date parsedDateTo = parseDate(dateTo, true);
 
             return sessionRepository
-                    .findAll(buildAdminSessionSpecification(normalizedSearch, normalizedPaymentStatus, normalizedSessionStatus), pageable)
+                    .findAll(buildAdminSessionSpecification(normalizedSearch, normalizedPaymentStatus, normalizedSessionStatus, parsedDateFrom, parsedDateTo), pageable)
                     .map(this::toAdminSessionResponseDTO);
+        } catch (SkillMentorException e) {
+            throw e;
         } catch (Exception exception) {
             log.error("Failed to fetch admin sessions", exception);
             throw new SkillMentorException("Failed to fetch sessions", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -341,12 +350,27 @@ public class SessionServiceImpl implements SessionService {
     private Specification<Session> buildAdminSessionSpecification(
             String search,
             String paymentStatus,
-            SessionStatus sessionStatus) {
+            SessionStatus sessionStatus,
+            Date dateFrom,
+            Date dateTo) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            // Avoid duplicate rows when joins are present
+            if (Boolean.FALSE.equals(query.isDistinct())) {
+                query.distinct(true);
+            }
+
             if (search != null) {
-                predicates.add(criteriaBuilder.like(root.get("id").as(String.class), "%" + search + "%"));
+                String pattern = "%" + search.toLowerCase() + "%";
+                var studentJoin = root.join("student", JoinType.LEFT);
+                var mentorJoin = root.join("mentor", JoinType.LEFT);
+                predicates.add(criteriaBuilder.or(
+                        criteriaBuilder.like(criteriaBuilder.lower(studentJoin.get("firstName")), pattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(studentJoin.get("lastName")), pattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(mentorJoin.get("firstName")), pattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(mentorJoin.get("lastName")), pattern)
+                ));
             }
 
             if (paymentStatus != null) {
@@ -357,8 +381,31 @@ public class SessionServiceImpl implements SessionService {
                 predicates.add(criteriaBuilder.equal(root.get("sessionStatus"), sessionStatus));
             }
 
+            if (dateFrom != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("sessionAt"), dateFrom));
+            }
+
+            if (dateTo != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("sessionAt"), dateTo));
+            }
+
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         };
+    }
+
+    private Date parseDate(String dateStr, boolean endOfDay) {
+        if (dateStr == null || dateStr.isBlank()) {
+            return null;
+        }
+        try {
+            LocalDate localDate = LocalDate.parse(dateStr);
+            if (endOfDay) {
+                return Date.from(localDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+            }
+            return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        } catch (DateTimeParseException e) {
+            throw new SkillMentorException("Invalid date format. Use ISO format: yyyy-MM-dd", HttpStatus.BAD_REQUEST);
+        }
     }
 
     private void validateEnrollmentRequest(Student student, Mentor mentor, Subject subject, CreateSessionRequest request) {
