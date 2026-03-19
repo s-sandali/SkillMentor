@@ -3,11 +3,13 @@ package com.stemlink.skillmentor.services.impl;
 import com.stemlink.skillmentor.dto.AdminMentorRequestDTO;
 import com.stemlink.skillmentor.dto.response.*;
 import com.stemlink.skillmentor.entities.Mentor;
+import com.stemlink.skillmentor.entities.Review;
 import com.stemlink.skillmentor.entities.Session;
 import com.stemlink.skillmentor.entities.SessionStatus;
 import com.stemlink.skillmentor.entities.Subject;
 import com.stemlink.skillmentor.exceptions.SkillMentorException;
 import com.stemlink.skillmentor.repositories.MentorRepository;
+import com.stemlink.skillmentor.repositories.ReviewRepository;
 import com.stemlink.skillmentor.repositories.SessionRepository;
 import com.stemlink.skillmentor.services.MentorService;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ public class MentorServiceImpl implements MentorService {
 
     private final MentorRepository mentorRepository;
     private final SessionRepository sessionRepository;
+    private final ReviewRepository reviewRepository;
     private final ModelMapper modelMapper;
 
     @CacheEvict(value = "mentors", allEntries = true)
@@ -170,20 +173,20 @@ public class MentorServiceImpl implements MentorService {
             // Fetch all sessions for this mentor
             List<Session> allSessions = sessionRepository.findByMentor_Id(mentorId);
 
-            // Fetch sessions with ratings for reviews
-            List<Session> sessionsWithReviews = sessionRepository.findByMentor_IdAndStudentRatingIsNotNull(mentorId);
+            // Fetch reviews for this mentor from the Review table
+            List<Review> mentorReviews = reviewRepository.findByMentor_Id(mentorId);
 
             // Build MentorInfo
             MentorInfoDTO mentorInfo = buildMentorInfo(mentor);
 
             // Build MentorStats
-            MentorStatsDTO mentorStats = buildMentorStats(mentor, allSessions, sessionsWithReviews);
+            MentorStatsDTO mentorStats = buildMentorStats(mentor, allSessions, mentorReviews);
 
             // Build Subjects with enrollment counts
             List<SubjectWithEnrollmentDTO> subjects = buildSubjectsWithEnrollments(mentor.getSubjects(), allSessions);
 
             // Build Reviews
-            List<ReviewDTO> reviews = buildReviews(sessionsWithReviews);
+            List<ReviewDTO> reviews = buildReviews(mentorReviews);
 
             MentorProfileResponseDTO response = new MentorProfileResponseDTO();
             response.setMentorInfo(mentorInfo);
@@ -217,7 +220,7 @@ public class MentorServiceImpl implements MentorService {
         return info;
     }
 
-    private MentorStatsDTO buildMentorStats(Mentor mentor, List<Session> allSessions, List<Session> sessionsWithReviews) {
+    private MentorStatsDTO buildMentorStats(Mentor mentor, List<Session> allSessions, List<Review> reviews) {
         MentorStatsDTO stats = new MentorStatsDTO();
 
         // Total unique students
@@ -233,20 +236,18 @@ public class MentorServiceImpl implements MentorService {
         // Subjects count
         stats.setSubjectsCount(mentor.getSubjects() != null ? mentor.getSubjects().size() : 0);
 
-        // Average rating
-        if (!sessionsWithReviews.isEmpty()) {
-            double avgRating = sessionsWithReviews.stream()
-                    .filter(s -> s.getStudentRating() != null)
-                    .mapToInt(Session::getStudentRating)
+        // Average rating and positive review percentage from Review table
+        if (!reviews.isEmpty()) {
+            double avgRating = reviews.stream()
+                    .mapToInt(Review::getRating)
                     .average()
                     .orElse(0.0);
             stats.setAverageRating(Math.round(avgRating * 10.0) / 10.0);
 
-            // Positive review percentage (ratings >= 4 out of 5)
-            long positiveReviews = sessionsWithReviews.stream()
-                    .filter(s -> s.getStudentRating() != null && s.getStudentRating() >= 4)
+            long positiveCount = reviews.stream()
+                    .filter(r -> r.getRating() >= 4)
                     .count();
-            double positivePercentage = (positiveReviews * 100.0) / sessionsWithReviews.size();
+            double positivePercentage = (positiveCount * 100.0) / reviews.size();
             stats.setPositiveReviewPercentage(Math.round(positivePercentage * 10.0) / 10.0);
         } else {
             stats.setAverageRating(0.0);
@@ -282,21 +283,21 @@ public class MentorServiceImpl implements MentorService {
                 .collect(Collectors.toList());
     }
 
-    private List<ReviewDTO> buildReviews(List<Session> sessionsWithReviews) {
-        return sessionsWithReviews.stream()
-                .filter(s -> s.getStudentReview() != null && !s.getStudentReview().trim().isEmpty())
-                .map(session -> {
-                    ReviewDTO review = new ReviewDTO();
-                    review.setReviewId(session.getId());
-                    review.setStudentName(
-                            session.getStudent() != null
-                            ? (session.getStudent().getFirstName() + " " + session.getStudent().getLastName()).trim()
+    private List<ReviewDTO> buildReviews(List<Review> reviews) {
+        return reviews.stream()
+                .filter(r -> r.getReviewText() != null && !r.getReviewText().trim().isEmpty())
+                .map(r -> {
+                    ReviewDTO dto = new ReviewDTO();
+                    dto.setReviewId(r.getId());
+                    dto.setStudentName(
+                            r.getStudent() != null
+                            ? (r.getStudent().getFirstName() + " " + r.getStudent().getLastName()).trim()
                             : "Anonymous"
                     );
-                    review.setRating(session.getStudentRating());
-                    review.setReviewText(session.getStudentReview());
-                    review.setReviewDate(session.getUpdatedAt());
-                    return review;
+                    dto.setRating(r.getRating());
+                    dto.setReviewText(r.getReviewText());
+                    dto.setReviewDate(r.getCreatedAt());
+                    return dto;
                 })
                 .sorted(Comparator.comparing(ReviewDTO::getReviewDate).reversed())
                 .collect(Collectors.toList());
