@@ -5,7 +5,9 @@ import type {
   DashboardResponse,
   Enrollment,
   Mentor,
+  MentorProfile,
   MentorResponse,
+  MentorReviewsResponse,
   Subject,
   SubjectResponse,
 } from "@/types";
@@ -200,6 +202,22 @@ export async function deleteSubject(token: string, id: number): Promise<void> {
   await fetchWithAuth(`/api/v1/subjects/${id}`, token, {
     method: "DELETE",
   });
+}
+
+// --------------------------------
+// Mentor Profile (public)
+// --------------------------------
+
+export async function getMentorProfile(mentorId: number): Promise<MentorProfile> {
+  const res = await fetch(`${API_BASE_URL}/api/v1/mentors/${mentorId}/profile`);
+  if (!res.ok) throw new Error("Failed to fetch mentor profile");
+  return res.json();
+}
+
+export async function getMentorReviews(mentorId: number): Promise<MentorReviewsResponse> {
+  const res = await fetch(`${API_BASE_URL}/api/v1/mentors/${mentorId}/reviews`);
+  if (!res.ok) throw new Error("Failed to fetch reviews");
+  return res.json();
 }
 
 // --------------------------------
