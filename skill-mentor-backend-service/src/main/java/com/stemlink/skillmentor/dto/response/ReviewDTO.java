@@ -10,7 +10,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ReviewDTO {
-    private Long sessionId;
+    private Long reviewId;
     private String studentName;
     private Integer rating;
     private String reviewText;
