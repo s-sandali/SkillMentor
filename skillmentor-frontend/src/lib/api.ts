@@ -56,6 +56,10 @@ export async function getMentors(
   return res.json();
 }
 
+export async function deleteMentor(token: string, id: number): Promise<void> {
+  await fetchWithAuth(`/api/v1/mentors/${id}`, token, { method: "DELETE" });
+}
+
 export async function createAdminMentor(
   token: string,
   data: CreateMentorRequest,
@@ -99,6 +103,8 @@ export async function getAdminSessions(
     search?: string;
     paymentStatus?: string;
     sessionStatus?: string;
+    dateFrom?: string;
+    dateTo?: string;
     sort?: string;
   } = {},
 ): Promise<{ content: AdminSession[]; totalElements: number; totalPages: number; number: number }> {
@@ -106,18 +112,12 @@ export async function getAdminSessions(
   searchParams.set("page", String(params.page ?? 0));
   searchParams.set("size", String(params.size ?? 10));
 
-  if (params.search) {
-    searchParams.set("search", params.search);
-  }
-  if (params.paymentStatus) {
-    searchParams.set("paymentStatus", params.paymentStatus);
-  }
-  if (params.sessionStatus) {
-    searchParams.set("sessionStatus", params.sessionStatus);
-  }
-  if (params.sort) {
-    searchParams.set("sort", params.sort);
-  }
+  if (params.search) searchParams.set("search", params.search);
+  if (params.paymentStatus) searchParams.set("paymentStatus", params.paymentStatus);
+  if (params.sessionStatus) searchParams.set("sessionStatus", params.sessionStatus);
+  if (params.dateFrom) searchParams.set("dateFrom", params.dateFrom);
+  if (params.dateTo) searchParams.set("dateTo", params.dateTo);
+  if (params.sort) searchParams.set("sort", params.sort);
 
   const res = await fetchWithAuth(`/api/v1/admin/sessions?${searchParams.toString()}`, token);
   return res.json();
@@ -165,22 +165,6 @@ export async function getAdminSubjects(
   size = 10,
 ): Promise<{ content: Subject[]; totalElements: number; totalPages: number }> {
   const res = await fetchWithAuth(`/api/v1/subjects?page=${page}&size=${size}`, token);
-  return res.json();
-}
-
-export async function createSubject(
-  token: string,
-  data: {
-    subjectName: string;
-    description: string;
-    mentorId: number;
-    courseImageUrl?: string;
-  },
-): Promise<Subject> {
-  const res = await fetchWithAuth("/api/v1/subjects", token, {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
   return res.json();
 }
 
