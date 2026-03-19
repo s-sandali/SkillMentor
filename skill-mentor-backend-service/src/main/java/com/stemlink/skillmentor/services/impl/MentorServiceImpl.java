@@ -209,6 +209,7 @@ public class MentorServiceImpl implements MentorService {
     private MentorInfoDTO buildMentorInfo(Mentor mentor) {
         MentorInfoDTO info = new MentorInfoDTO();
         info.setId(mentor.getId());
+        info.setMentorId(mentor.getMentorId());
         info.setName((mentor.getFirstName() + " " + mentor.getLastName()).trim());
         info.setTitle(mentor.getTitle());
         info.setProfession(mentor.getProfession());
@@ -285,7 +286,6 @@ public class MentorServiceImpl implements MentorService {
 
     private List<ReviewDTO> buildReviews(List<Review> reviews) {
         return reviews.stream()
-                .filter(r -> r.getReviewText() != null && !r.getReviewText().trim().isEmpty())
                 .map(r -> {
                     ReviewDTO dto = new ReviewDTO();
                     dto.setReviewId(r.getId());

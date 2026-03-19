@@ -115,7 +115,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     private ReviewResponseDTO toResponseDTO(Review review) {
         ReviewResponseDTO dto = new ReviewResponseDTO();
-        dto.setId(review.getId());
+        dto.setReviewId(review.getId());
         dto.setSessionId(review.getSession().getId());
         dto.setMentorId(review.getMentor().getId());
         dto.setStudentName(
@@ -125,7 +125,7 @@ public class ReviewServiceImpl implements ReviewService {
         );
         dto.setRating(review.getRating());
         dto.setReviewText(review.getReviewText());
-        dto.setCreatedAt(review.getCreatedAt());
+        dto.setReviewDate(review.getCreatedAt());
         return dto;
     }
 }
