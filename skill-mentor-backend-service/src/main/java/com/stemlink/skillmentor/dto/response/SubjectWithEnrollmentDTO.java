@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class SubjectWithEnrollmentDTO {
     private Long subjectId;
     private String subjectName;
-    private String description;
+    private String subjectDescription;
     private String thumbnail;
     private Integer enrollmentCount;
 }
