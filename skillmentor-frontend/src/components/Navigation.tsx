@@ -2,10 +2,16 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router";
 import { useAuth, SignInButton, UserButton } from "@clerk/clerk-react";
 import SkillMentorLogo from "@/assets/logo.webp";
-import { Menu } from "lucide-react";
+import { Compass, Menu, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+
+const navItems = [
+  { label: "Tutors", to: "/" },
+  { label: "About Us", to: "/" },
+  { label: "Resources", to: "/" },
+];
 
 export function Navigation() {
   const { isSignedIn } = useAuth();
@@ -14,31 +20,25 @@ export function Navigation() {
   const NavItems = ({ mobile = false }: { mobile?: boolean }) => (
     <nav
       className={cn(
-        "flex items-center gap-6 text-sm font-medium",
-        mobile && "flex-col items-start gap-4",
+        "flex items-center gap-2 text-sm font-medium",
+        mobile && "flex-col items-stretch gap-2",
       )}
     >
-      <Link
-        to="/"
-        className="hover:text-primary transition-colors"
-        onClick={() => mobile && setIsOpen(false)}
-      >
-        Tutors
-      </Link>
-      <Link
-        to="/"
-        className="hover:text-primary transition-colors"
-        onClick={() => mobile && setIsOpen(false)}
-      >
-        About Us
-      </Link>
-      <Link
-        to="/"
-        className="hover:text-primary transition-colors"
-        onClick={() => mobile && setIsOpen(false)}
-      >
-        Resources
-      </Link>
+      {navItems.map((item) => (
+        <Link
+          key={item.label}
+          to={item.to}
+          className={cn(
+            "rounded-full px-4 py-2 text-white/75 transition-all duration-200 hover:bg-white/10 hover:text-white",
+            mobile &&
+              "flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-white"
+          )}
+          onClick={() => mobile && setIsOpen(false)}
+        >
+          <span>{item.label}</span>
+          {mobile ? <Compass className="size-4 text-white/50" /> : null}
+        </Link>
+      ))}
     </nav>
   );
 
@@ -56,7 +56,13 @@ export function Navigation() {
             className={cn(mobile && "w-full")}
             onClick={() => mobile && setIsOpen(false)}
           >
-            <Button variant="ghost" className={cn(mobile && "w-full")}>
+            <Button
+              variant="ghost"
+              className={cn(
+                "rounded-full border border-white/10 text-white hover:bg-white/10 hover:text-white",
+                mobile && "h-11 w-full rounded-2xl"
+              )}
+            >
               Dashboard
             </Button>
           </Link>
@@ -66,13 +72,15 @@ export function Navigation() {
               mobile && "w-full justify-center",
             )}
           >
-            <UserButton
-              appearance={{
-                elements: {
-                  avatarBox: "w-8 h-8",
-                },
-              }}
-            />
+            <div className="rounded-full border border-white/10 bg-white/5 p-1">
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox: "w-8 h-8",
+                  },
+                }}
+              />
+            </div>
           </div>
         </>
       ) : (
@@ -86,17 +94,24 @@ export function Navigation() {
               },
             }}
           >
-            <Button variant="ghost" className={cn(mobile && "w-full")}>
+            <Button
+              variant="ghost"
+              className={cn(
+                "rounded-full text-white/80 hover:bg-white/10 hover:text-white",
+                mobile && "h-11 w-full rounded-2xl border border-white/10"
+              )}
+            >
               Login
             </Button>
           </SignInButton>
-          <Link to="/login">
+          <Link to="/login" className={cn(mobile && "w-full")}>
             <Button
               className={cn(
-                "bg-primary text-primary-foreground hover:bg-primary/90",
-                mobile && "w-full",
+                "rounded-full bg-white text-black shadow-[0_12px_30px_-16px_rgba(255,255,255,0.9)] hover:bg-white/90",
+                mobile && "h-11 w-full rounded-2xl",
               )}
             >
+              <Sparkles className="size-4" />
               Sign up
             </Button>
           </Link>
@@ -106,35 +121,40 @@ export function Navigation() {
   );
 
   return (
-    <header className="sticky top-0 z-50 py-2 text-white w-full bg-black backdrop-blur supports-[backdrop-filter]:bg-black/90">
-      <div className="container flex flex-wrap h-14 items-center justify-between">
-        <div className="flex items-center">
-          <Link to="/" className="flex items-center space-x-2">
+    <header className="sticky top-0 z-50 w-full px-4 py-3 text-white sm:px-6">
+      <div className="mx-auto flex max-w-7xl items-center justify-between rounded-[28px] border border-white/10 bg-black/95 px-4 py-3 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.7)] backdrop-blur supports-[backdrop-filter]:bg-black/80 sm:px-6">
+        <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center space-x-3">
             <img
               src={SkillMentorLogo}
               alt="SkillMentor Logo"
-              className="size-12 rounded-full"
+              className="size-11 rounded-full ring-1 ring-white/10"
             />
-            <span className="font-semibold text-xl">SkillMentor</span>
+            <div className="flex flex-col">
+              <span className="text-lg font-semibold leading-none">
+                SkillMentor
+              </span>
+              <span className="mt-1 text-[11px] uppercase tracking-[0.22em] text-white/45">
+                Learn with experts
+              </span>
+            </div>
           </Link>
-          <div className="ml-6 hidden md:block">
+          <div className="ml-4 hidden rounded-full border border-white/10 bg-white/[0.04] p-1 md:block">
             <NavItems />
           </div>
         </div>
 
-        {/* Desktop Auth Buttons */}
         <div className="hidden md:block">
           <AuthButtons />
         </div>
 
-        {/* Mobile Menu */}
         <div className="md:hidden">
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild className="border-primary">
+            <SheetTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-white/10"
+                className="rounded-full border border-white/10 bg-white/[0.04] text-white hover:bg-white/10"
               >
                 <Menu className="size-6" />
                 <span className="sr-only">Toggle menu</span>
@@ -142,21 +162,26 @@ export function Navigation() {
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-[300px] bg-black text-white p-6"
+              className="w-[320px] border-l border-white/10 bg-black p-6 text-white"
             >
               <div className="flex flex-col h-full">
-                <div className="flex items-center justify-between mb-8">
+                <div className="mb-8 rounded-[28px] border border-white/10 bg-white/[0.04] p-4">
                   <Link
                     to="/"
-                    className="flex items-center space-x-2"
+                    className="flex items-center space-x-3"
                     onClick={() => setIsOpen(false)}
                   >
                     <img
                       src={SkillMentorLogo}
                       alt="SkillMentor Logo"
-                      className="size-10 rounded-full"
+                      className="size-11 rounded-full ring-1 ring-white/10"
                     />
-                    <span className="font-semibold text-lg">SkillMentor</span>
+                    <div className="flex flex-col">
+                      <span className="text-lg font-semibold">SkillMentor</span>
+                      <span className="text-[11px] uppercase tracking-[0.22em] text-white/45">
+                        Learn with experts
+                      </span>
+                    </div>
                   </Link>
                 </div>
 

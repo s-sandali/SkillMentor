@@ -5,6 +5,7 @@ import { WhyChooseUsSection } from "@/components/landing/WhyChooseUsSection";
 import { MentorShowcaseSection } from "@/components/landing/MentorShowcaseSection";
 import { MentorPreviewSection } from "@/components/landing/MentorPreviewSection";
 import { SuccessStoriesSection } from "@/components/landing/SuccessStoriesSection";
+import { FaqSection } from "@/components/landing/FaqSection";
 import { Footer } from "@/components/Footer";
 
 export default function HomePage() {
@@ -37,6 +38,7 @@ export default function HomePage() {
           <SuccessStoriesSection />
           
           <MentorShowcaseSection />
+          <FaqSection />
           <ScheduleCallSection />
         </div>
       </main>
