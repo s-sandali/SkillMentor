@@ -8,9 +8,9 @@ export function HeroSection() {
   return (
     <section 
       aria-label="Hero Section"
-      className="max-w-7xl mx-auto px-6 py-16 min-h-[80vh] flex flex-col items-center justify-between md:flex-row gap-8"
+      className="max-w-7xl mx-auto px-6 py-16 min-h-[80vh] flex flex-col items-center justify-between md:flex-row gap-8 relative"
     >
-      <div className="flex flex-col items-center justify-center space-y-8 text-center flex-1">
+      <div className="flex flex-col items-center justify-center space-y-8 text-center flex-1 relative z-10">
         <div className="space-y-4">
           <h1 className="text-5xl tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl font-bold">
             Find your SkillMentor
