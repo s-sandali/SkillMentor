@@ -108,7 +108,7 @@ export function BookingModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-160 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Book a session</DialogTitle>
           <DialogDescription>
