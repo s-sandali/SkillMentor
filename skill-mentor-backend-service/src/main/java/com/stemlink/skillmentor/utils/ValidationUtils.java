@@ -6,6 +6,7 @@ import com.stemlink.skillmentor.entities.SessionStatus;
 import com.stemlink.skillmentor.entities.Student;
 import com.stemlink.skillmentor.entities.Subject;
 import com.stemlink.skillmentor.exceptions.BookingConflictException;
+import com.stemlink.skillmentor.exceptions.InvalidSessionTimeException;
 
 import java.util.Collections;
 import java.util.Calendar;
@@ -76,11 +77,46 @@ public class ValidationUtils {
 
     public static void validateSessionTimeInFuture(Date sessionAt) {
         if (sessionAt == null) {
-            throw new BookingConflictException("Session date/time is required");
+            throw new InvalidSessionTimeException("Session date/time is required");
         }
 
         if (!sessionAt.after(new Date())) {
-            throw new BookingConflictException("Session time must be in the future");
+            throw new InvalidSessionTimeException("Session time must be in the future. Please select an upcoming date and time.");
+        }
+    }
+
+    /**
+     * Validates that the student has not already booked a session for the same subject
+     * in an overlapping time window. Gives a specific error before the general overlap check.
+     */
+    public static void validateDuplicateSubjectBooking(Student student, Subject subject, Date sessionAt, Integer durationMinutes) {
+        if (durationMinutes == null || durationMinutes <= 0) {
+            durationMinutes = 60;
+        }
+
+        Date sessionEnd = addMinutesToDate(sessionAt, durationMinutes);
+        List<Session> studentSessions = student.getSessions() != null ? student.getSessions() : Collections.emptyList();
+
+        for (Session existingSession : studentSessions) {
+            if (!isBlockingSession(existingSession)) {
+                continue;
+            }
+            if (existingSession.getSubject() == null) {
+                continue;
+            }
+            if (!existingSession.getSubject().getId().equals(subject.getId())) {
+                continue;
+            }
+
+            Date existingStart = existingSession.getSessionAt();
+            Integer existingDuration = existingSession.getDurationMinutes() != null ? existingSession.getDurationMinutes() : 60;
+            Date existingEnd = addMinutesToDate(existingStart, existingDuration);
+
+            if (isTimeOverlap(sessionAt, sessionEnd, existingStart, existingEnd)) {
+                throw new BookingConflictException(
+                        "You are already enrolled in '" + subject.getName() + "' at the requested time. Please choose a different time slot."
+                );
+            }
         }
     }
 
