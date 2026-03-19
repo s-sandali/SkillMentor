@@ -66,6 +66,10 @@ export default function CreateSubjectPage() {
     },
   });
 
+  const previewName = form.watch("name");
+  const previewDescription = form.watch("description");
+  const previewImageUrl = form.watch("courseImageUrl");
+
   useEffect(() => {
     const loadMentors = async () => {
       try {
@@ -134,102 +138,140 @@ export default function CreateSubjectPage() {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Subject Details</CardTitle>
-          <CardDescription>
-            Fill in the details below to create a new subject.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Subject Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Mathematics" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Provide details about the subject..."
-                        className="min-h-28 resize-y"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="courseImageUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Image URL (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://example.com/image.jpg" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="mentorId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Mentor</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={isLoadingMentors}
-                    >
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.8fr)]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Subject Details</CardTitle>
+            <CardDescription>
+              Fill in the details below to create a new subject.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Subject Name</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue
-                            placeholder={
-                              isLoadingMentors
-                                ? "Loading mentors..."
-                                : "Select a mentor"
-                            }
-                          />
-                        </SelectTrigger>
+                        <Input placeholder="e.g., Mathematics" {...field} />
                       </FormControl>
-                      <SelectContent>
-                        {mentors.map((mentor) => (
-                          <SelectItem key={mentor.id} value={String(mentor.id)}>
-                            {mentor.firstName} {mentor.lastName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="flex justify-end">
-                <Button type="submit">
-                  {isSubmitting ? "Creating..." : "Create Subject"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Provide details about the subject..."
+                          className="min-h-28 resize-y"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="courseImageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Image URL (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://example.com/image.jpg" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="mentorId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mentor</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={isLoadingMentors}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={
+                                isLoadingMentors
+                                  ? "Loading mentors..."
+                                  : "Select a mentor"
+                              }
+                            />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {mentors.map((mentor) => (
+                            <SelectItem key={mentor.id} value={String(mentor.id)}>
+                              {mentor.firstName} {mentor.lastName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-end">
+                  <Button type="submit">
+                    {isSubmitting ? "Creating..." : "Create Subject"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden border-border/70 bg-card/95 shadow-sm">
+          <CardHeader>
+            <CardTitle>Subject Preview</CardTitle>
+            <CardDescription>
+              This is how the subject card will read in the admin view.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="overflow-hidden rounded-2xl border bg-muted/35">
+              {previewImageUrl ? (
+                <div className="flex min-h-64 items-center justify-center p-4">
+                  <img
+                    src={previewImageUrl}
+                    alt={previewName || "Subject preview"}
+                    className="max-h-64 w-full rounded-xl object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="flex min-h-64 items-center justify-center bg-muted text-4xl font-semibold text-muted-foreground">
+                  {(previewName || "S").charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-2xl font-semibold leading-tight">
+                {previewName || "Your subject title will appear here"}
+              </h3>
+              <p className="text-sm leading-7 text-muted-foreground">
+                {previewDescription ||
+                  "Add a short, clear description so administrators can quickly understand the value of this subject."}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
