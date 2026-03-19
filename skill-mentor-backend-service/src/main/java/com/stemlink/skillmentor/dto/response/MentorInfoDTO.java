@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class MentorInfoDTO {
     private Long id;
+    private String mentorId;
     private String name;
     private String title;
     private String profession;
