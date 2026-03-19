@@ -1,10 +1,13 @@
 package com.stemlink.skillmentor.services.impl;
 
 import com.stemlink.skillmentor.dto.AdminMentorRequestDTO;
-import com.stemlink.skillmentor.dto.response.MentorResponseDTO;
+import com.stemlink.skillmentor.dto.response.*;
 import com.stemlink.skillmentor.entities.Mentor;
+import com.stemlink.skillmentor.entities.Session;
+import com.stemlink.skillmentor.entities.Subject;
 import com.stemlink.skillmentor.exceptions.SkillMentorException;
 import com.stemlink.skillmentor.repositories.MentorRepository;
+import com.stemlink.skillmentor.repositories.SessionRepository;
 import com.stemlink.skillmentor.services.MentorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,8 +19,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,12 +30,14 @@ import java.util.UUID;
 public class MentorServiceImpl implements MentorService {
 
     private final MentorRepository mentorRepository;
+    private final SessionRepository sessionRepository;
     private final ModelMapper modelMapper;
 
     @CacheEvict(value = "mentors", allEntries = true)
-    public Mentor createNewMentor(Mentor mentor) {
+    public MentorResponseDTO createNewMentor(Mentor mentor) {
         try {
-            return mentorRepository.save(mentor);
+            Mentor saved = mentorRepository.save(mentor);
+            return modelMapper.map(saved, MentorResponseDTO.class);
         } catch (DataIntegrityViolationException e) {
             log.error("Data integrity violation while creating mentor: {}", e.getMessage());
             throw new SkillMentorException("Mentor with this email already exists", HttpStatus.CONFLICT);
@@ -81,14 +88,15 @@ public class MentorServiceImpl implements MentorService {
         }
     }
 
+    @Transactional(readOnly = true)
     @Cacheable(value = "mentors", key = "(#name ?: '') + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
-    public Page<Mentor> getAllMentors(String name, Pageable pageable) {
+    public Page<MentorResponseDTO> getAllMentors(String name, Pageable pageable) {
         try {
             log.debug("getting mentors with name: {}", name);
-            if (name != null && !name.isEmpty()) {
-                return mentorRepository.findByName(name, pageable);
-            }
-            return mentorRepository.findAll(pageable); // SELECT * FROM mentor
+            Page<Mentor> mentors = (name != null && !name.isEmpty())
+                    ? mentorRepository.findByName(name, pageable)
+                    : mentorRepository.findAll(pageable);
+            return mentors.map(m -> modelMapper.map(m, MentorResponseDTO.class));
         } catch (Exception exception) {
             log.error("Failed to get all mentors", exception);
             throw new SkillMentorException("Failed to get all mentors", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -96,32 +104,29 @@ public class MentorServiceImpl implements MentorService {
 
     }
 
+    @Transactional(readOnly = true)
     @Cacheable(value = "mentors", key = "#id")
-    public Mentor getMentorById(Long id) {
+    public MentorResponseDTO getMentorById(Long id) {
         try {
-
-            Mentor mentor = mentorRepository.findById(id).orElseThrow(
+            Mentor mentor = mentorRepository.findWithSubjectsById(id).orElseThrow(
                     () -> new SkillMentorException("Mentor Not found", HttpStatus.NOT_FOUND)
             );
             log.info("Successfully fetched mentor {}", id);
-            return mentor;
+            return modelMapper.map(mentor, MentorResponseDTO.class);
         } catch (SkillMentorException skillMentorException) {
-            //System.err.println("Mentor not found " + skillMentorException.getMessage());
-            // LOG LEVELS
-            // DEBUG, INFO, WARN, ERROR
-            // env - dev, prod
             log.warn("Mentor not found with id: {} to fetch", id, skillMentorException);
-            throw new SkillMentorException("Mentor Not found", HttpStatus.NOT_FOUND);
+            throw skillMentorException;
         } catch (Exception exception) {
             log.error("Error getting mentor", exception);
             throw new SkillMentorException("Failed to get mentor", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
+    @Transactional
     @CacheEvict(value = "mentors", allEntries = true)
-    public Mentor updateMentorById(Long id, Mentor updatedMentor, String requestingClerkId, boolean isAdmin) {
+    public MentorResponseDTO updateMentorById(Long id, Mentor updatedMentor, String requestingClerkId, boolean isAdmin) {
         try {
-            Mentor mentor = mentorRepository.findById(id).orElseThrow(
+            Mentor mentor = mentorRepository.findWithSubjectsById(id).orElseThrow(
                     () -> new SkillMentorException("Mentor Not found", HttpStatus.NOT_FOUND)
             );
 
@@ -131,10 +136,11 @@ public class MentorServiceImpl implements MentorService {
             }
 
             modelMapper.map(updatedMentor, mentor);
-            return mentorRepository.save(mentor);
+            Mentor saved = mentorRepository.save(mentor);
+            return modelMapper.map(saved, MentorResponseDTO.class);
         } catch (SkillMentorException skillMentorException) {
-            log.warn("Mentor not found with id: {} to update", id, skillMentorException);
-            throw new SkillMentorException("Mentor Not found", HttpStatus.NOT_FOUND);
+            log.warn("SkillMentor exception while updating mentor id {}: {}", id, skillMentorException.getMessage());
+            throw skillMentorException;
         } catch (Exception exception) {
             log.error("Error updating mentor", exception);
             throw new SkillMentorException("Failed to update mentor", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -149,6 +155,149 @@ public class MentorServiceImpl implements MentorService {
             log.error("Failed to delete mentor with id {}", id, exception);
             throw new SkillMentorException("Failed to delete mentor", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @Override
+    @Cacheable(value = "mentorProfiles", key = "#mentorId")
+    public MentorProfileResponseDTO getMentorProfile(Long mentorId) {
+        try {
+            // Fetch mentor with subjects eagerly loaded
+            Mentor mentor = mentorRepository.findWithSubjectsById(mentorId)
+                    .orElseThrow(() -> new SkillMentorException("Mentor not found", HttpStatus.NOT_FOUND));
+
+            // Fetch all sessions for this mentor
+            List<Session> allSessions = sessionRepository.findByMentor_Id(mentorId);
+
+            // Fetch sessions with ratings for reviews
+            List<Session> sessionsWithReviews = sessionRepository.findByMentor_IdAndStudentRatingIsNotNull(mentorId);
+
+            // Build MentorInfo
+            MentorInfoDTO mentorInfo = buildMentorInfo(mentor);
+
+            // Build MentorStats
+            MentorStatsDTO mentorStats = buildMentorStats(mentor, allSessions, sessionsWithReviews);
+
+            // Build Subjects with enrollment counts
+            List<SubjectWithEnrollmentDTO> subjects = buildSubjectsWithEnrollments(mentor.getSubjects(), allSessions);
+
+            // Build Reviews
+            List<ReviewDTO> reviews = buildReviews(sessionsWithReviews);
+
+            MentorProfileResponseDTO response = new MentorProfileResponseDTO();
+            response.setMentorInfo(mentorInfo);
+            response.setMentorStats(mentorStats);
+            response.setSubjects(subjects);
+            response.setReviews(reviews);
+
+            log.info("Successfully built mentor profile for mentor id {}", mentorId);
+            return response;
+
+        } catch (SkillMentorException e) {
+            log.warn("Failed to get mentor profile: {}", e.getMessage());
+            throw e;
+        } catch (Exception exception) {
+            log.error("Failed to get mentor profile for id {}", mentorId, exception);
+            throw new SkillMentorException("Failed to get mentor profile", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private MentorInfoDTO buildMentorInfo(Mentor mentor) {
+        MentorInfoDTO info = new MentorInfoDTO();
+        info.setId(mentor.getId());
+        info.setName((mentor.getFirstName() + " " + mentor.getLastName()).trim());
+        info.setTitle(mentor.getTitle());
+        info.setProfession(mentor.getProfession());
+        info.setCompany(mentor.getCompany());
+        info.setProfileImage(mentor.getProfileImageUrl());
+        info.setBio(mentor.getBio());
+        info.setStartYear(mentor.getStartYear());
+        info.setIsCertified(mentor.getIsCertified());
+        return info;
+    }
+
+    private MentorStatsDTO buildMentorStats(Mentor mentor, List<Session> allSessions, List<Session> sessionsWithReviews) {
+        MentorStatsDTO stats = new MentorStatsDTO();
+
+        // Total unique students
+        Set<Long> uniqueStudents = allSessions.stream()
+                .filter(s -> s.getStudent() != null)
+                .map(s -> s.getStudent().getId().longValue())
+                .collect(Collectors.toSet());
+        stats.setTotalStudents(uniqueStudents.size());
+
+        // Years of experience
+        stats.setYearsExperience(mentor.getExperienceYears());
+
+        // Subjects count
+        stats.setSubjectsCount(mentor.getSubjects() != null ? mentor.getSubjects().size() : 0);
+
+        // Average rating
+        if (!sessionsWithReviews.isEmpty()) {
+            double avgRating = sessionsWithReviews.stream()
+                    .filter(s -> s.getStudentRating() != null)
+                    .mapToInt(Session::getStudentRating)
+                    .average()
+                    .orElse(0.0);
+            stats.setAverageRating(Math.round(avgRating * 10.0) / 10.0);
+
+            // Positive review percentage (ratings >= 4 out of 5)
+            long positiveReviews = sessionsWithReviews.stream()
+                    .filter(s -> s.getStudentRating() != null && s.getStudentRating() >= 4)
+                    .count();
+            double positivePercentage = (positiveReviews * 100.0) / sessionsWithReviews.size();
+            stats.setPositiveReviewPercentage(Math.round(positivePercentage * 10.0) / 10.0);
+        } else {
+            stats.setAverageRating(0.0);
+            stats.setPositiveReviewPercentage(0.0);
+        }
+
+        return stats;
+    }
+
+    private List<SubjectWithEnrollmentDTO> buildSubjectsWithEnrollments(List<Subject> subjects, List<Session> allSessions) {
+        if (subjects == null) {
+            return new ArrayList<>();
+        }
+
+        // Count enrollments per subject
+        Map<Long, Long> enrollmentsBySubject = allSessions.stream()
+                .filter(s -> s.getSubject() != null)
+                .collect(Collectors.groupingBy(
+                        s -> s.getSubject().getId(),
+                        Collectors.counting()
+                ));
+
+        return subjects.stream()
+                .map(subject -> {
+                    SubjectWithEnrollmentDTO dto = new SubjectWithEnrollmentDTO();
+                    dto.setSubjectId(subject.getId());
+                    dto.setSubjectName(subject.getName());
+                    dto.setDescription(subject.getDescription());
+                    dto.setThumbnail(subject.getCourseImageUrl());
+                    dto.setEnrollmentCount(enrollmentsBySubject.getOrDefault(subject.getId(), 0L).intValue());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private List<ReviewDTO> buildReviews(List<Session> sessionsWithReviews) {
+        return sessionsWithReviews.stream()
+                .filter(s -> s.getStudentReview() != null && !s.getStudentReview().trim().isEmpty())
+                .map(session -> {
+                    ReviewDTO review = new ReviewDTO();
+                    review.setSessionId(session.getId());
+                    review.setStudentName(
+                            session.getStudent() != null
+                            ? (session.getStudent().getFirstName() + " " + session.getStudent().getLastName()).trim()
+                            : "Anonymous"
+                    );
+                    review.setRating(session.getStudentRating());
+                    review.setReviewText(session.getStudentReview());
+                    review.setReviewDate(session.getUpdatedAt());
+                    return review;
+                })
+                .sorted(Comparator.comparing(ReviewDTO::getReviewDate).reversed())
+                .collect(Collectors.toList());
     }
 
     private String trimToNull(String value) {
