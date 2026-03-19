@@ -4,6 +4,7 @@ import com.stemlink.skillmentor.dto.AdminMentorRequestDTO;
 import com.stemlink.skillmentor.dto.response.*;
 import com.stemlink.skillmentor.entities.Mentor;
 import com.stemlink.skillmentor.entities.Session;
+import com.stemlink.skillmentor.entities.SessionStatus;
 import com.stemlink.skillmentor.entities.Subject;
 import com.stemlink.skillmentor.exceptions.SkillMentorException;
 import com.stemlink.skillmentor.repositories.MentorRepository;
@@ -158,6 +159,7 @@ public class MentorServiceImpl implements MentorService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     @Cacheable(value = "mentorProfiles", key = "#mentorId")
     public MentorProfileResponseDTO getMentorProfile(Long mentorId) {
         try {
@@ -259,9 +261,9 @@ public class MentorServiceImpl implements MentorService {
             return new ArrayList<>();
         }
 
-        // Count enrollments per subject
+        // Count enrollments per subject, excluding cancelled sessions
         Map<Long, Long> enrollmentsBySubject = allSessions.stream()
-                .filter(s -> s.getSubject() != null)
+                .filter(s -> s.getSubject() != null && s.getSessionStatus() != SessionStatus.CANCELLED)
                 .collect(Collectors.groupingBy(
                         s -> s.getSubject().getId(),
                         Collectors.counting()
@@ -272,7 +274,7 @@ public class MentorServiceImpl implements MentorService {
                     SubjectWithEnrollmentDTO dto = new SubjectWithEnrollmentDTO();
                     dto.setSubjectId(subject.getId());
                     dto.setSubjectName(subject.getName());
-                    dto.setDescription(subject.getDescription());
+                    dto.setSubjectDescription(subject.getDescription());
                     dto.setThumbnail(subject.getCourseImageUrl());
                     dto.setEnrollmentCount(enrollmentsBySubject.getOrDefault(subject.getId(), 0L).intValue());
                     return dto;
@@ -285,7 +287,7 @@ public class MentorServiceImpl implements MentorService {
                 .filter(s -> s.getStudentReview() != null && !s.getStudentReview().trim().isEmpty())
                 .map(session -> {
                     ReviewDTO review = new ReviewDTO();
-                    review.setSessionId(session.getId());
+                    review.setReviewId(session.getId());
                     review.setStudentName(
                             session.getStudent() != null
                             ? (session.getStudent().getFirstName() + " " + session.getStudent().getLastName()).trim()
