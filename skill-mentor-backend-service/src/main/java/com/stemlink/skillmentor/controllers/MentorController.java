@@ -3,9 +3,11 @@ package com.stemlink.skillmentor.controllers;
 import com.stemlink.skillmentor.dto.MentorDTO;
 import com.stemlink.skillmentor.dto.response.MentorProfileResponseDTO;
 import com.stemlink.skillmentor.dto.response.MentorResponseDTO;
+import com.stemlink.skillmentor.dto.response.MentorReviewsResponseDTO;
 import com.stemlink.skillmentor.entities.Mentor;
 import com.stemlink.skillmentor.security.UserPrincipal;
 import com.stemlink.skillmentor.services.MentorService;
+import com.stemlink.skillmentor.services.ReviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -27,6 +29,7 @@ import static com.stemlink.skillmentor.constants.UserRoles.*;
 public class MentorController extends AbstractController {
 
     private final MentorService mentorService;
+    private final ReviewService reviewService;
     private final ModelMapper modelMapper;
 
     @GetMapping
@@ -45,6 +48,11 @@ public class MentorController extends AbstractController {
     public ResponseEntity<MentorProfileResponseDTO> getMentorProfile(@PathVariable Long mentorId) {
         MentorProfileResponseDTO profile = mentorService.getMentorProfile(mentorId);
         return sendOkResponse(profile);
+    }
+
+    @GetMapping("{mentorId}/reviews")
+    public ResponseEntity<MentorReviewsResponseDTO> getMentorReviews(@PathVariable Long mentorId) {
+        return sendOkResponse(reviewService.getMentorReviews(mentorId));
     }
 
     @PostMapping
