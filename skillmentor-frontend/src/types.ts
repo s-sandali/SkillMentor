@@ -120,3 +120,57 @@ export interface DashboardResponse {
   totalBookings: number;
   recentActivities: Activity[];
 }
+
+// --- Mentor Profile (GET /api/v1/mentors/:id/profile) ---
+
+export interface MentorInfo {
+  id: number;
+  mentorId: string;
+  name: string;
+  title?: string;
+  profession?: string;
+  company?: string;
+  profileImage?: string;
+  bio?: string;
+  startYear?: string;
+  isCertified?: boolean;
+}
+
+export interface MentorStats {
+  totalStudents: number;
+  yearsExperience: number;
+  subjectsCount: number;
+  averageRating: number;
+  positiveReviewPercentage: number;
+}
+
+export interface SubjectWithEnrollment {
+  subjectId: number;
+  subjectName: string;
+  subjectDescription?: string;
+  thumbnail?: string;
+  enrollmentCount: number;
+}
+
+export interface MentorReview {
+  reviewId: number;
+  studentName: string;
+  rating: number;
+  reviewText?: string;
+  reviewDate: string;
+}
+
+export interface MentorProfile {
+  mentorInfo: MentorInfo;
+  mentorStats: MentorStats;
+  subjects: SubjectWithEnrollment[];
+  reviews: MentorReview[];
+}
+
+// --- Reviews (GET /api/v1/mentors/:id/reviews) ---
+
+export interface MentorReviewsResponse {
+  reviews: MentorReview[];
+  averageRating: number;
+  totalReviews: number;
+}
