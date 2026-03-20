@@ -14,6 +14,7 @@ import CreateMentorPage from "@/pages/Admin/Mentors/CreateMentorPage";
 import ManageMentorsPage from "@/pages/Admin/Mentors/ManageMentorsPage";
 import ManageBookingsPage from "@/pages/Admin/Bookings/ManageBookingsPage";
 import MentorProfilePage from "@/pages/MentorProfilePage";
+import MentorsPage from "@/pages/MentorsPage";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/mentors" element={<MentorsPage />} />
           <Route path="/mentors/:mentorId" element={<MentorProfilePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route
