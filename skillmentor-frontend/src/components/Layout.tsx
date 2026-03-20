@@ -7,13 +7,14 @@ import { useLocation } from "react-router";
 export default function Layout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const isHomePage = location.pathname === "/";
+  const isAdminPage = location.pathname.startsWith("/admin");
 
   return (
     <ToastProvider>
       <section className="min-h-screen flex flex-col">
-        {!isHomePage && <Navigation />}
+        {!isHomePage && !isAdminPage && <Navigation />}
         <main>{children}</main>
-        {!isHomePage && <Footer />}
+        {!isHomePage && !isAdminPage && <Footer />}
       </section>
       <ToastViewport />
     </ToastProvider>
