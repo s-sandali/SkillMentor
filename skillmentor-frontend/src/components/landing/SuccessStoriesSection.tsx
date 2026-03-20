@@ -18,7 +18,7 @@ const successStories = {
       title: "I went from zero coding knowledge to a full-time engineering role",
       description: "Henry Jhongson — Software Engineer at Meta",
       href: "#",
-      image: "https://images.pexels.com/photos/3861447/pexels-photo-3861447.jpeg",
+      image: "https://static.sliit.lk/wp-content/uploads/2019/08/26031316/SLIIT-faculty-of-Computing-img.jpg",
     },
     {
       id: "story3",
@@ -32,7 +32,7 @@ const successStories = {
       title: "Went from backend intern to frontend lead in under a year",
       description: "David Kim — Frontend Engineer at Stripe",
       href: "#",
-      image: "https://images.pexels.com/photos/5717549/pexels-photo-5717549.jpeg",
+      image: "https://www.teachhub.com/wp-content/uploads/2021/09/Aug-30-Challenges-Faced-by-a-First-Generation-College-Student_web-768x519.jpg",
     },
   ],
 };
