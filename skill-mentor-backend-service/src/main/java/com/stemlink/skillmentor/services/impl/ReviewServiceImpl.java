@@ -3,6 +3,7 @@ package com.stemlink.skillmentor.services.impl;
 import com.stemlink.skillmentor.dto.ReviewRequestDTO;
 import com.stemlink.skillmentor.dto.response.MentorReviewsResponseDTO;
 import com.stemlink.skillmentor.dto.response.ReviewResponseDTO;
+import com.stemlink.skillmentor.entities.Mentor;
 import com.stemlink.skillmentor.entities.Review;
 import com.stemlink.skillmentor.entities.Session;
 import com.stemlink.skillmentor.entities.SessionStatus;
@@ -16,7 +17,8 @@ import com.stemlink.skillmentor.security.UserPrincipal;
 import com.stemlink.skillmentor.services.ReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -35,10 +37,10 @@ public class ReviewServiceImpl implements ReviewService {
     private final SessionRepository sessionRepository;
     private final StudentRepository studentRepository;
     private final MentorRepository mentorRepository;
+    private final CacheManager cacheManager;
 
     @Override
     @Transactional
-    @CacheEvict(value = {"mentorProfiles", "mentorReviews"}, allEntries = true)
     public ReviewResponseDTO submitReview(ReviewRequestDTO request, UserPrincipal userPrincipal) {
         // 1. Find the session
         Session session = sessionRepository.findById(request.getSessionId())
@@ -82,6 +84,13 @@ public class ReviewServiceImpl implements ReviewService {
         Review saved = reviewRepository.save(review);
         log.info("Student {} submitted review for session {}", student.getEmail(), session.getId());
 
+        // Update denormalized positiveReviews % on the Mentor entity
+        Long mentorId = session.getMentor().getId();
+        updateMentorPositiveReviews(mentorId);
+
+        // Evict only this mentor's cached profile and reviews
+        evictMentorCache(mentorId);
+
         return toResponseDTO(saved);
     }
 
@@ -111,6 +120,27 @@ public class ReviewServiceImpl implements ReviewService {
         response.setTotalReviews(reviews.size());
 
         return response;
+    }
+
+    private void updateMentorPositiveReviews(Long mentorId) {
+        mentorRepository.findById(mentorId).ifPresent(mentor -> {
+            List<Review> allReviews = reviewRepository.findByMentor_Id(mentorId);
+            if (allReviews.isEmpty()) return;
+            long positiveCount = allReviews.stream().filter(r -> r.getRating() >= 4).count();
+            int percentage = (int) Math.round((positiveCount * 100.0) / allReviews.size());
+            mentor.setPositiveReviews(percentage);
+            mentorRepository.save(mentor);
+            log.debug("Updated mentor {} positiveReviews to {}%", mentorId, percentage);
+        });
+    }
+
+    private void evictMentorCache(Long mentorId) {
+        Cache profileCache = cacheManager.getCache("mentorProfiles");
+        Cache reviewCache = cacheManager.getCache("mentorReviews");
+        Cache mentorsCache = cacheManager.getCache("mentors");
+        if (profileCache != null) profileCache.evict(mentorId);
+        if (reviewCache != null) reviewCache.evict(mentorId);
+        if (mentorsCache != null) mentorsCache.clear(); // list cache uses composite keys
     }
 
     private ReviewResponseDTO toResponseDTO(Review review) {
