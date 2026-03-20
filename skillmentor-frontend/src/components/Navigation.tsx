@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { useAuth, SignInButton, UserButton } from "@clerk/clerk-react";
 import SkillMentorLogo from "@/assets/logo.webp";
 import { Compass, LayoutDashboard, Menu, Sparkles, X } from "lucide-react";
@@ -7,20 +7,31 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 
-const navItems = [
-  { label: "Tutors", to: "/mentors" },
-  { label: "About Us", to: "/" },
-  { label: "Resources", to: "/" },
+interface NavItem {
+  label: string;
+  /** React Router path — used when NOT on the home page */
+  to: string;
+  /** In-page anchor ID — used on the home page for smooth scroll */
+  sectionId?: string;
+}
+
+const navItems: NavItem[] = [
+  { label: "Mentors", to: "/mentors", sectionId: "mentors" },
+  { label: "Why Us", to: "/#why-us", sectionId: "why-us" },
+  { label: "FAQ", to: "/#faq", sectionId: "faq" },
 ];
 
 export function Navigation() {
   const { isSignedIn } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0, opacity: 0 });
   const navRef = useRef<HTMLDivElement>(null);
   const linkRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+
+  const isHomePage = location.pathname === "/";
 
   // Scroll awareness
   useEffect(() => {
@@ -29,9 +40,12 @@ export function Navigation() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Animated active indicator
+  // Animated active indicator — highlight whichever section is in view
   useEffect(() => {
-    const activeIndex = navItems.findIndex((item) => item.to === location.pathname);
+    // For exact path matches (e.g. /mentors)
+    const activeIndex = navItems.findIndex(
+      (item) => location.pathname === item.to
+    );
     const activeEl = linkRefs.current[activeIndex];
     const container = navRef.current;
     if (activeEl && container) {
@@ -47,6 +61,23 @@ export function Navigation() {
     }
   }, [location.pathname]);
 
+  const handleNavClick = (item: NavItem) => {
+    setIsOpen(false);
+    if (item.sectionId && isHomePage) {
+      // Smooth scroll within home page
+      document.getElementById(item.sectionId)?.scrollIntoView({ behavior: "smooth" });
+    } else if (item.sectionId && !isHomePage) {
+      // Navigate to home then scroll after mount
+      navigate(`/`);
+      // Use setTimeout to let the page render before scrolling
+      setTimeout(() => {
+        document.getElementById(item.sectionId!)?.scrollIntoView({ behavior: "smooth" });
+      }, 300);
+    } else {
+      navigate(item.to);
+    }
+  };
+
   const NavItems = ({ mobile = false }: { mobile?: boolean }) => (
     <nav
       className={cn(
@@ -54,30 +85,27 @@ export function Navigation() {
         mobile && "flex-col items-stretch gap-2"
       )}
     >
-      {navItems.map((item, i) => {
-        const isActive = location.pathname === item.to;
-        return (
-          <Link
-            key={item.label}
-            to={item.to}
-            ref={(el) => {
-              linkRefs.current[i] = el;
-            }}
-            className={cn(
-              "relative z-10 rounded-full px-4 py-2 text-sm transition-all duration-200",
-              isActive
-                ? "text-white font-semibold"
-                : "text-white/60 hover:text-white/90",
-              mobile &&
-                "flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-white"
-            )}
-            onClick={() => mobile && setIsOpen(false)}
-          >
-            <span>{item.label}</span>
-            {mobile ? <Compass className="size-4 text-white/40" /> : null}
-          </Link>
-        );
-      })}
+      {navItems.map((item, i) => (
+        <button
+          key={item.label}
+          ref={(el) => {
+            // Cast to anchor for positioning calculation (we capture the button el)
+            linkRefs.current[i] = el as unknown as HTMLAnchorElement;
+          }}
+          onClick={() => handleNavClick(item)}
+          className={cn(
+            "relative z-10 rounded-full px-4 py-2 text-sm transition-all duration-200 text-left",
+            location.pathname === item.to
+              ? "text-white font-semibold"
+              : "text-white/60 hover:text-white/90",
+            mobile &&
+              "flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-white w-full"
+          )}
+        >
+          <span>{item.label}</span>
+          {mobile ? <Compass className="size-4 text-white/40" /> : null}
+        </button>
+      ))}
     </nav>
   );
 
@@ -106,18 +134,9 @@ export function Navigation() {
               Dashboard
             </Button>
           </Link>
-          <div
-            className={cn(
-              "flex items-center",
-              mobile && "w-full justify-center"
-            )}
-          >
+          <div className={cn("flex items-center", mobile && "w-full justify-center")}>
             <div className="rounded-full border border-white/10 bg-white/5 p-1">
-              <UserButton
-                appearance={{
-                  elements: { avatarBox: "w-8 h-8" },
-                }}
-              />
+              <UserButton appearance={{ elements: { avatarBox: "w-8 h-8" } }} />
             </div>
           </div>
         </>
@@ -126,9 +145,7 @@ export function Navigation() {
           <SignInButton
             forceRedirectUrl="/dashboard"
             mode="modal"
-            appearance={{
-              elements: { formButtonPrimary: "bg-primary" },
-            }}
+            appearance={{ elements: { formButtonPrimary: "bg-primary" } }}
           >
             <Button
               variant="ghost"
@@ -143,7 +160,7 @@ export function Navigation() {
           <Link to="/login" className={cn(mobile && "w-full")}>
             <Button
               className={cn(
-                "rounded-full bg-white text-black font-semibold shadow-[0_8px_24px_-8px_rgba(255,255,255,0.6)] hover:bg-white/90 hover:shadow-[0_8px_32px_-8px_rgba(255,255,255,0.8)] transition-all gap-1.5",
+                "rounded-full bg-white text-black font-semibold shadow-[0_8px_24px_-8px_rgba(255,255,255,0.6)] hover:bg-white/90 transition-all gap-1.5",
                 mobile && "h-11 w-full rounded-2xl"
               )}
             >
@@ -166,7 +183,7 @@ export function Navigation() {
             : "border-white/[0.08] bg-black/75 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.5)] backdrop-blur-md"
         )}
       >
-        {/* Subtle top glow line */}
+        {/* Top glow line */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
         {/* Logo */}
@@ -177,12 +194,9 @@ export function Navigation() {
               alt="SkillMentor Logo"
               className="size-9 rounded-full ring-1 ring-white/15"
             />
-            <div className="absolute inset-0 rounded-full bg-primary/10 blur-sm" />
           </div>
           <div className="flex flex-col leading-none">
-            <span className="text-[15px] font-bold text-white tracking-tight">
-              SkillMentor
-            </span>
+            <span className="text-[15px] font-bold text-white tracking-tight">SkillMentor</span>
             <span className="text-[9.5px] uppercase tracking-[0.2em] text-white/40 mt-0.5">
               Learn · Grow · Excel
             </span>
@@ -208,7 +222,7 @@ export function Navigation() {
           </div>
         </div>
 
-        {/* Right — auth buttons (desktop) + mobile menu */}
+        {/* Right — auth + mobile hamburger */}
         <div className="flex items-center gap-2">
           <div className="hidden md:flex items-center gap-2">
             <AuthButtons />
@@ -264,7 +278,7 @@ export function Navigation() {
                     <NavItems mobile />
                   </div>
 
-                  {/* Auth section */}
+                  {/* Auth */}
                   <div className="px-4 pb-8 pt-4 border-t border-white/[0.07]">
                     <AuthButtons mobile />
                   </div>
