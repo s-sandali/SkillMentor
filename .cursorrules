@@ -1,0 +1,24 @@
+# SkillMentor Backend Architecture Rules
+
+When Adding a New Module (e.g., Payment, Review), you MUST follow this checklist:
+
+- [ ] Create **Entity** with dual-key if Clerk-linked, `@CreationTimestamp`/`@UpdateTimestamp`, `Serializable`
+- [ ] Create **RequestDTO** with Bean Validation; **ResponseDTO** with only what the client needs
+- [ ] Create **Service interface** (in `services/`) with response DTO return types
+- [ ] Create **ServiceImpl** (in `services/impl/`) with `SkillMentorException` wrapping, `@Cacheable`, Slf4j logging
+- [ ] Create **Repository** extending `JpaRepository<Entity, IdType>`; add only needed custom queries
+- [ ] Create **Controller** extending `AbstractController`, `@Validated`, mapping with `ModelMapper` moved to service
+- [ ] Apply `@PreAuthorize` at class and method level; implement ownership checks
+- [ ] Register any custom `ModelMapper` type maps in `ModelMapperConfig`
+- [ ] Add cache `value` name to cache configuration if using Redis
+
+### Example: ReviewModule skeleton
+```text
+entities/Review.java
+dto/ReviewRequestDTO.java
+dto/response/ReviewResponseDTO.java
+services/ReviewService.java
+services/impl/ReviewServiceImpl.java
+repositories/ReviewRepository.java
+controllers/ReviewController.java extends AbstractController
+```
