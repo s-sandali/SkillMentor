@@ -221,6 +221,20 @@ export async function getMentorReviews(mentorId: number): Promise<MentorReviewsR
 }
 
 // --------------------------------
+// Reviews
+// --------------------------------
+
+export async function submitReview(
+  token: string,
+  data: { sessionId: number; rating: number; reviewText?: string },
+): Promise<void> {
+  await fetchWithAuth("/api/v1/reviews", token, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+// --------------------------------
 // Admin Dashboard API
 // --------------------------------
 
