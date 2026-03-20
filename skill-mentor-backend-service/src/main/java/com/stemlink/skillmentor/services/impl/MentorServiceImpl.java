@@ -93,7 +93,7 @@ public class MentorServiceImpl implements MentorService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "mentors", key = "(#name ?: '') + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
+    @Cacheable(value = "mentors", key = "(#name ?: '') + '_' + (#pageable != null ? #pageable.pageNumber : 0) + '_' + (#pageable != null ? #pageable.pageSize : 10)")
     public Page<MentorResponseDTO> getAllMentors(String name, Pageable pageable) {
         try {
             log.debug("getting mentors with name: {}", name);
