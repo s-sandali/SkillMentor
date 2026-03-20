@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/StatusPill";
-import { getMyEnrollments } from "@/lib/api";
+import { ReviewModal } from "@/components/ReviewModal";
+import { getMyEnrollments, submitReview } from "@/lib/api";
 import type { Enrollment } from "@/types";
 import { useNavigate } from "react-router";
 
@@ -10,6 +12,8 @@ export default function DashboardPage() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const { user } = useUser();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [reviewedSessionIds, setReviewedSessionIds] = useState<Set<number>>(new Set());
+  const [reviewTarget, setReviewTarget] = useState<Enrollment | null>(null);
   const router = useNavigate();
 
   useEffect(() => {
@@ -18,7 +22,6 @@ export default function DashboardPage() {
       const token = await getToken({ template: "skillmentor-auth" });
       if (!token) return;
       try {
-        console.log("Fetching enrollments with token:", token);
         const data = await getMyEnrollments(token);
         setEnrollments(data);
       } catch (err) {
@@ -30,6 +33,17 @@ export default function DashboardPage() {
       fetchEnrollments();
     }
   }, [isLoaded, isSignedIn, getToken, user]);
+
+  const handleSubmitReview = async (
+    sessionId: number,
+    rating: number,
+    reviewText: string,
+  ) => {
+    const token = await getToken({ template: "skillmentor-auth" });
+    if (!token) throw new Error("Not authenticated");
+    await submitReview(token, { sessionId, rating, reviewText: reviewText || undefined });
+    setReviewedSessionIds((prev) => new Set(prev).add(sessionId));
+  };
 
   if (!isLoaded) {
     return (
@@ -56,51 +70,87 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="container py-10">
-      <h1 className="text-3xl font-bold tracking-tight mb-6">My Courses</h1>
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {enrollments.map((enrollment) => (
-          <div
-            key={enrollment.id}
-            className="rounded-2xl p-6 relative overflow-hidden bg-linear-to-br from-blue-500 to-blue-600"
-          >
-            {/* Status Pill */}
-            <div className="absolute top-4 right-4">
-              <StatusPill status={enrollment.paymentStatus} />
-            </div>
+    <>
+      <div className="container py-10">
+        <h1 className="text-3xl font-bold tracking-tight mb-6">My Courses</h1>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {enrollments.map((enrollment) => {
+            const isCompleted = enrollment.sessionStatus === "COMPLETED";
+            const alreadyReviewed = reviewedSessionIds.has(enrollment.id);
 
-            {/* Profile Image */}
-            <div className="size-24 rounded-full bg-white/10 mb-4">
-              {enrollment.mentorProfileImageUrl ? (
-                <img
-                  src={enrollment.mentorProfileImageUrl}
-                  alt={enrollment.mentorName}
-                  className="w-full h-full rounded-full object-cover object-top"
-                />
-              ) : (
-                <div className="w-full h-full rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                  {enrollment.mentorName.charAt(0)}
+            return (
+              <div
+                key={enrollment.id}
+                className="rounded-2xl p-6 relative overflow-hidden bg-linear-to-br from-blue-500 to-blue-600"
+              >
+                {/* Status Pill */}
+                <div className="absolute top-4 right-4">
+                  <StatusPill status={enrollment.paymentStatus} />
                 </div>
-              )}
-            </div>
 
-            {/* Course Info */}
-            <div className="space-y-1">
-              <h2 className="text-xl font-semibold text-white">
-                {enrollment.subjectName}
-              </h2>
-              <p className="text-blue-100/80">
-                Mentor: {enrollment.mentorName}
-              </p>
-              <div className="flex items-center text-blue-100/80 text-sm mt-2">
-                <CalendarDays className="mr-2 h-4 w-4" />
-                Next Session:{" "}
-                {new Date(enrollment.sessionAt).toLocaleDateString()}
+                {/* Profile Image */}
+                <div className="size-24 rounded-full bg-white/10 mb-4">
+                  {enrollment.mentorProfileImageUrl ? (
+                    <img
+                      src={enrollment.mentorProfileImageUrl}
+                      alt={enrollment.mentorName}
+                      className="w-full h-full rounded-full object-cover object-top"
+                    />
+                  ) : (
+                    <div className="w-full h-full rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                      {enrollment.mentorName.charAt(0)}
+                    </div>
+                  )}
+                </div>
+
+                {/* Course Info */}
+                <div className="space-y-1">
+                  <h2 className="text-xl font-semibold text-white">
+                    {enrollment.subjectName}
+                  </h2>
+                  <p className="text-blue-100/80">
+                    Mentor: {enrollment.mentorName}
+                  </p>
+                  <div className="flex items-center text-blue-100/80 text-sm mt-2">
+                    <CalendarDays className="mr-2 h-4 w-4" />
+                    Next Session:{" "}
+                    {new Date(enrollment.sessionAt).toLocaleDateString()}
+                  </div>
+                </div>
+
+                {/* Review button — only for completed sessions */}
+                {isCompleted && (
+                  <div className="mt-4">
+                    {alreadyReviewed ? (
+                      <div className="flex items-center gap-1.5 text-white/70 text-sm">
+                        <Star className="size-4 fill-yellow-300 text-yellow-300" />
+                        Review submitted
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="w-full gap-1.5"
+                        onClick={() => setReviewTarget(enrollment)}
+                      >
+                        <Star className="size-4" />
+                        Write a Review
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
-          </div>
-        ))}
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+      <ReviewModal
+        enrollment={reviewTarget}
+        isOpen={reviewTarget !== null}
+        onClose={() => setReviewTarget(null)}
+        onSubmit={handleSubmitReview}
+      />
+    </>
   );
 }

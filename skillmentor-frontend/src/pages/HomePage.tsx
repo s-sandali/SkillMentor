@@ -30,6 +30,8 @@ export default function HomePage() {
           }}
         />
         <div className="relative z-10 flex w-full flex-col">
+          {/* Spacer to offset fixed navbar (navbar height ~56px + 16px top offset) */}
+          <div className="h-[80px]" aria-hidden="true" />
           <HeroSection />
           
           <WhyChooseUsSection />
