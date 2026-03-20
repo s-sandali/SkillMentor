@@ -74,7 +74,7 @@ public class SessionController extends AbstractController {
 
     // Fetch sessions specific to the signed-in student
     @GetMapping("/my-sessions")
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
     public ResponseEntity<Page<SessionResponseDTO>> getMySessions(Authentication authentication, Pageable pageable) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         if (userPrincipal == null || userPrincipal.getEmail() == null) {
