@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,9 +8,10 @@ import {
   GraduationCap,
   ShieldCheck,
   ThumbsUp,
+  BookOpen,
 } from "lucide-react";
-import type { Mentor } from "@/types";
-import { SchedulingModal } from "@/components/SchedulingModel";
+import type { Mentor, MentorInfo, SubjectWithEnrollment } from "@/types";
+import { BookingModal } from "@/components/mentor-profile/BookingModal";
 import { SignupDialog } from "@/components/SignUpDialog";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@clerk/clerk-react";
@@ -20,121 +21,161 @@ interface MentorCardProps {
 }
 
 export function MentorCard({ mentor }: MentorCardProps) {
-  const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [isSignupDialogOpen, setIsSignupDialogOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const { isSignedIn } = useAuth();
 
   const mentorName = `${mentor.firstName} ${mentor.lastName}`;
   const hasSubjects = mentor.subjects.length > 0;
-  const courseTitle = mentor.subjects[0]?.subjectName ?? "";
-  const courseImageUrl = mentor.subjects[0]?.courseImageUrl ?? "";
   const bio = mentor.bio ?? "";
-  const bioTooLong = bio.length > 200;
+  const bioTooLong = bio.length > 160;
+
+  const mentorInfo = useMemo<MentorInfo>(() => ({
+    id: mentor.id,
+    mentorId: mentor.mentorId,
+    name: mentorName,
+    title: mentor.title || undefined,
+    profession: mentor.profession || undefined,
+    company: mentor.company || undefined,
+    profileImage: mentor.profileImageUrl || undefined,
+    bio: mentor.bio || undefined,
+    startYear: mentor.startYear || undefined,
+    isCertified: mentor.isCertified,
+  }), [mentor, mentorName]);
+
+  const bookingSubjects = useMemo<SubjectWithEnrollment[]>(() => (
+    mentor.subjects.map((s) => ({
+      subjectId: s.id,
+      subjectName: s.name ?? s.subjectName ?? "",
+      subjectDescription: s.description,
+      thumbnail: s.courseImageUrl,
+      enrollmentCount: 0,
+    }))
+  ), [mentor.subjects]);
 
   const handleSchedule = () => {
     if (!isSignedIn) {
       setIsSignupDialogOpen(true);
       return;
     }
-    setIsSchedulingModalOpen(true);
+    setIsBookingOpen(true);
   };
 
   return (
     <>
-      <Card className="flex flex-col h-full">
-        <div className="p-6 flex-1 flex flex-col">
-          <div className="flex justify-between items-start mb-4">
-            <div className="space-y-2">
-              <h3 className="font-semibold text-xl">{courseTitle}</h3>
-              <div className="flex items-center space-x-2">
-                <ThumbsUp className="size-6" />
-                <p className="text-sm text-muted-foreground">
-                  {mentor.positiveReviews}% positive reviews
-                </p>
-              </div>
-              <div className="flex items-center space-x-2">
-                {mentor.profileImageUrl ? (
-                  <img
-                    src={mentor.profileImageUrl}
-                    alt={mentorName}
-                    className="size-6 object-cover object-top rounded-full"
-                  />
-                ) : (
-                  <div className="size-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
-                    {mentor.firstName.charAt(0)}
-                  </div>
-                )}
-                <span className="text-sm">{mentorName}</span>
-              </div>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <Building2 className="size-6" />
-                <span>{mentor.company}</span>
-              </div>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <Calendar className="size-6" />
-                <span>Tutor since {mentor.startYear}</span>
-              </div>
-            </div>
-            <div className="w-36">
-              {courseImageUrl ? (
-                <img
-                  src={courseImageUrl}
-                  alt={courseTitle}
-                  className="size-20 object-cover"
-                />
-              ) : (
-                <div className="size-20 bg-muted flex items-center justify-center">
-                  <span className="text-2xl font-semibold">
-                    {courseTitle.charAt(0)}
-                  </span>
-                </div>
-              )}
-            </div>
+      <Card className="flex flex-col h-full overflow-visible relative">
+        {/* Certified badge — anchored to top-right corner of the card */}
+        {mentor.isCertified && (
+          <div className="absolute -top-2.5 right-4 z-10 flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 shadow-sm">
+            <ShieldCheck className="size-3" />
+            Certified
           </div>
+        )}
 
-          <div className="mb-4 grow">
-            <div>
-              <p
-                className={cn(
-                  "text-sm transition-all duration-300 ease-in-out",
-                  !isExpanded && bioTooLong ? "line-clamp-3" : "",
-                )}
-              >
-                {bio}
-              </p>
-              {bioTooLong && (
-                <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="text-primary text-sm font-medium mt-1 hover:underline"
-                >
-                  {isExpanded ? "See less" : "See more"}
-                </button>
-              )}
+        {/* Profile header */}
+        <div className="flex items-center gap-4 p-6 pb-4">
+          {mentor.profileImageUrl ? (
+            <img
+              src={mentor.profileImageUrl}
+              alt={mentorName}
+              className="size-16 rounded-full object-cover object-top ring-2 ring-border shrink-0"
+            />
+          ) : (
+            <div className="size-16 rounded-full bg-muted ring-2 ring-border shrink-0 flex items-center justify-center text-xl font-bold text-muted-foreground">
+              {mentor.firstName.charAt(0)}
             </div>
-          </div>
+          )}
 
-          <div className="mt-auto">
-            <h4 className="font-medium mb-2">Highlights</h4>
-            <div className="bg-linear-to-br from-blue-100 to-blue-200 p-3 rounded-md flex flex-col gap-4">
-              <div className="flex items-center space-x-2">
-                <GraduationCap className="w-4 h-4" />
-                <span className="text-sm">
-                  {mentor.totalEnrollments} Enrollments
-                </span>
-              </div>
-
-              {mentor.isCertified && (
-                <div className="flex items-center space-x-2">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span className="text-sm">Certified Teacher</span>
-                </div>
-              )}
+          <div className="min-w-0">
+            <h3 className="font-semibold text-base leading-tight truncate">{mentorName}</h3>
+            {mentor.title && (
+              <p className="text-sm text-muted-foreground truncate">{mentor.title}</p>
+            )}
+            <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+              <Building2 className="size-3 shrink-0" />
+              <span className="truncate">{mentor.company}</span>
+            </div>
+            <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
+              <Calendar className="size-3 shrink-0" />
+              <span>Tutor since {mentor.startYear}</span>
             </div>
           </div>
         </div>
 
-        <div className="p-6 pt-0 flex flex-col gap-2">
+        {/* Stats row — no overflow issues */}
+        <div className="mx-6 mb-4 flex items-center gap-0 rounded-lg border border-border divide-x divide-border text-sm overflow-hidden">
+          <div className="flex flex-1 items-center justify-center gap-1.5 px-3 py-2">
+            <ThumbsUp className="size-3.5 text-primary shrink-0" />
+            <span className="font-semibold">{mentor.positiveReviews}%</span>
+            <span className="text-muted-foreground text-xs hidden sm:inline">positive</span>
+          </div>
+          <div className="flex flex-1 items-center justify-center gap-1.5 px-3 py-2">
+            <GraduationCap className="size-3.5 text-primary shrink-0" />
+            <span className="font-semibold">{mentor.totalEnrollments}</span>
+            <span className="text-muted-foreground text-xs hidden sm:inline">enrolled</span>
+          </div>
+        </div>
+
+        {/* Bio */}
+        <div className="px-6 mb-4 flex-1">
+          <p
+            className={cn(
+              "text-sm text-muted-foreground leading-relaxed transition-all duration-300",
+              !isExpanded && bioTooLong ? "line-clamp-3" : "",
+            )}
+          >
+            {bio}
+          </p>
+          {bioTooLong && (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-primary text-sm font-medium mt-1 hover:underline"
+            >
+              {isExpanded ? "See less" : "See more"}
+            </button>
+          )}
+        </div>
+
+        {/* Subjects — with thumbnails */}
+        {hasSubjects && (
+          <div className="px-6 mb-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
+              Teaching
+            </p>
+            <div className="flex flex-col gap-2">
+              {mentor.subjects.map((s) => {
+                const name = s.name ?? s.subjectName ?? "";
+                const thumb = s.courseImageUrl;
+                return (
+                  <div
+                    key={s.id}
+                    className="flex items-center gap-2.5 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5"
+                  >
+                    {/* Thumbnail */}
+                    {thumb ? (
+                      <img
+                        src={thumb}
+                        alt={name}
+                        className="size-7 rounded-md object-cover shrink-0 ring-1 ring-border"
+                      />
+                    ) : (
+                      <div className="size-7 rounded-md bg-muted flex items-center justify-center shrink-0 ring-1 ring-border">
+                        <BookOpen className="size-3.5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <span className="text-xs font-medium text-foreground/80 leading-tight line-clamp-1">
+                      {name}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="p-6 pt-0 flex flex-col gap-2 mt-auto">
           <Button
             onClick={handleSchedule}
             className="w-full bg-black text-white hover:bg-black/90"
@@ -156,10 +197,11 @@ export function MentorCard({ mentor }: MentorCardProps) {
         onClose={() => setIsSignupDialogOpen(false)}
       />
 
-      <SchedulingModal
-        isOpen={isSchedulingModalOpen}
-        onClose={() => setIsSchedulingModalOpen(false)}
-        mentor={mentor}
+      <BookingModal
+        isOpen={isBookingOpen}
+        onClose={() => setIsBookingOpen(false)}
+        mentorInfo={mentorInfo}
+        subjects={bookingSubjects}
       />
     </>
   );
