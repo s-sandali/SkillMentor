@@ -2,7 +2,6 @@ import { Navbar } from "@/components/landing/Navbar";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { ScheduleCallSection } from "@/components/landing/ScheduleCallSection";
 import { WhyChooseUsSection } from "@/components/landing/WhyChooseUsSection";
-import { MentorShowcaseSection } from "@/components/landing/MentorShowcaseSection";
 import { MentorPreviewSection } from "@/components/landing/MentorPreviewSection";
 import { SuccessStoriesSection } from "@/components/landing/SuccessStoriesSection";
 import { FaqSection } from "@/components/landing/FaqSection";
@@ -33,13 +32,13 @@ export default function HomePage() {
           {/* Spacer to offset fixed navbar (navbar height ~56px + 16px top offset) */}
           <div className="h-[80px]" aria-hidden="true" />
           <HeroSection />
-          
+
           <WhyChooseUsSection />
-          
+
           <MentorPreviewSection />
           <SuccessStoriesSection />
-          
-          <MentorShowcaseSection />
+
+
           <FaqSection />
           <ScheduleCallSection />
         </div>
