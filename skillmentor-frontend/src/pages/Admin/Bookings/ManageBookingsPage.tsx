@@ -528,8 +528,7 @@ export default function ManageBookingsPage() {
                               Confirm Payment
                             </Button>
                           )}
-                          {booking.paymentStatus === "accepted" &&
-                            booking.sessionStatus !== "COMPLETED" &&
+                          {booking.sessionStatus !== "COMPLETED" &&
                             booking.sessionStatus !== "CANCELLED" && (
                               <Button
                                 type="button"
