@@ -20,7 +20,7 @@ A full-stack online mentoring platform that connects students with industry expe
 
 SkillMentor is built around two core experiences:
 
-**For students** — browse a catalogue of mentors, view their profiles and subject offerings, book a one-on-one session, upload a bank transfer slip as payment proof, and track session status from a personal dashboard.
+**For students** — browse a catalogue of mentors, view rich mentor profile pages with bios, certifications, subjects taught and enrollment counts, book a one-on-one session with a subject pre-selected, upload a bank transfer slip as payment proof, and track session status from a personal dashboard. Once a session is completed, students can leave a review.
 
 **For admins** — manage the entire platform without touching Postman. Create mentors and subjects, view all bookings in a filterable table, confirm payments, mark sessions complete, and attach meeting links — all from a protected admin panel.
 
@@ -29,24 +29,25 @@ SkillMentor is built around two core experiences:
 ## Features
 
 ### Student-facing
-- Browse all available mentors with their subjects and expertise
-- View detailed mentor profiles (bio, experience, certifications, enrolled students)
-- Book sessions by selecting a subject, date, and time
+- Browse all available mentors with subjects and expertise on the home page and dedicated mentors listing
+- View detailed mentor profile pages (`/mentors/:mentorId`) showing bio, experience, certifications, subjects taught with enrollment counts, statistics, and student reviews
+- Book sessions by selecting a subject, date, and time — subject is pre-filled when booking from a mentor profile
 - Upload bank transfer slip to confirm payment
 - Personal dashboard showing all enrolled sessions with live status updates
-- Protected against double-booking (same mentor/subject + overlapping time slots)
+- Write a review for completed sessions from the dashboard
+- Protected against double-booking (same mentor/subject + overlapping time slots enforced at the backend)
 - Past dates are blocked at both frontend and backend levels
 
 ### Admin Panel (`/admin`)
 - Role-based access via Clerk public metadata — non-admins are redirected automatically
 - Sidebar navigation across all admin sections
+- Overview dashboard with platform stats and recent activity feed
 - **Mentor management** — create mentor profiles with a live card preview before submitting
 - **Subject management** — create subjects and assign them to mentors via dropdown
 - **Booking management** — paginated, searchable, filterable table of all sessions across the platform
   - Confirm pending payments
   - Mark sessions as completed
   - Attach a meeting link via dialog
-- Platform overview with total counts and recent activity feed
 
 ---
 
@@ -54,7 +55,7 @@ SkillMentor is built around two core experiences:
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 19, TypeScript, Vite, Tailwind CSS, shadcn/ui |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS v4, shadcn/ui |
 | Routing | React Router v7 |
 | Forms | React Hook Form + Zod |
 | Authentication | Clerk |
@@ -82,8 +83,10 @@ skillmentor-platform/
 │   │   │   │   ├── Subjects/      # CreateSubjectPage, ManageSubjectsPage
 │   │   │   │   └── AdminDashboardOverview.tsx
 │   │   │   ├── DashboardPage.tsx  # Student session dashboard
-│   │   │   ├── HomePage.tsx       # Mentor discovery / browse
+│   │   │   ├── HomePage.tsx       # Landing page + featured mentors
 │   │   │   ├── LoginPage.tsx
+│   │   │   ├── MentorsPage.tsx    # Full mentor browsing catalogue
+│   │   │   ├── MentorProfilePage.tsx  # Mentor profile with subjects, stats & reviews
 │   │   │   └── PaymentPage.tsx    # Bank slip upload + enrollment
 │   │   ├── lib/
 │   │   │   └── api.ts             # All API calls
@@ -101,6 +104,7 @@ skillmentor-platform/
         │   ├── AdminSessionController.java
         │   ├── AdminSubjectController.java
         │   ├── MentorController.java
+        │   ├── ReviewController.java
         │   ├── SessionController.java
         │   └── SubjectController.java
         ├── dto/                   # Request/response DTOs
@@ -189,15 +193,17 @@ All endpoints are prefixed with `/api/v1`. The full interactive documentation is
 |---|---|---|
 | `GET` | `/api/v1/mentors` | List all mentors with their subjects |
 | `GET` | `/api/v1/mentors/{id}` | Get a single mentor's full profile |
+| `GET` | `/api/v1/mentors/{mentorId}/reviews` | Get reviews for a mentor |
 
-### Student endpoints (requires valid Clerk JWT with `STUDENT` role)
+### Student endpoints (requires valid Clerk JWT)
 
 | Method | Endpoint | Description |
 |---|---|---|
 | `POST` | `/api/v1/sessions/enroll` | Book a session with a mentor |
 | `GET` | `/api/v1/sessions/my-sessions` | Get all sessions for the logged-in student |
+| `POST` | `/api/v1/reviews` | Submit a review for a completed session |
 
-### Admin endpoints (requires `ADMIN` role in Clerk public metadata)
+### Admin endpoints (requires `admin` role in Clerk public metadata)
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -213,7 +219,7 @@ All endpoints are prefixed with `/api/v1`. The full interactive documentation is
 
 ```json
 {
-  "mentorId": "clerk_user_id_of_mentor",
+  "mentorId": 1,
   "subjectId": 1,
   "sessionDateTime": "2025-04-15T10:00:00",
   "durationMinutes": 60
@@ -224,6 +230,25 @@ The backend validates that: the date is not in the past, there are no overlappin
 
 ---
 
+## Frontend Routes
+
+| Route | Component | Auth Required | Purpose |
+|---|---|---|---|
+| `/` | HomePage | No | Landing page + featured mentors |
+| `/mentors` | MentorsPage | No | Browse full mentor catalogue |
+| `/mentors/:mentorId` | MentorProfilePage | No | Mentor profile, subjects, reviews |
+| `/login` | LoginPage | No | Clerk authentication |
+| `/dashboard` | DashboardPage | Yes | View enrolled sessions |
+| `/payment/:sessionId` | PaymentPage | Yes | Upload bank slip |
+| `/admin` | AdminLayout | Yes (admin) | Admin dashboard overview |
+| `/admin/mentors` | ManageMentorsPage | Yes (admin) | List and manage mentors |
+| `/admin/mentors/create` | CreateMentorPage | Yes (admin) | Create a new mentor |
+| `/admin/subjects` | ManageSubjectsPage | Yes (admin) | List and manage subjects |
+| `/admin/subjects/create` | CreateSubjectPage | Yes (admin) | Create a new subject |
+| `/admin/bookings` | ManageBookingsPage | Yes (admin) | All bookings table |
+
+---
+
 ## Authentication & Roles
 
 This project uses [Clerk](https://clerk.com) for authentication. JWTs are issued using a custom Clerk JWT template named `skillmentor-auth`, which the backend validates against the Clerk JWKS endpoint.
@@ -231,7 +256,6 @@ This project uses [Clerk](https://clerk.com) for authentication. JWTs are issued
 Roles are stored in Clerk's **public metadata** on the user object:
 
 ```json
-// Admin user
 {
   "role": "admin"
 }
@@ -257,7 +281,7 @@ The `vercel.json` at the root of the frontend folder rewrites all routes to `ind
 
 ### Backend (Render)
 
-The backend is containerised with Docker. Render injects a `PORT` environment variable at runtime, and the application is configured to pick this up automatically. The `Dockerfile` uses a single-stage Maven build.
+The backend is containerised with Docker. Render injects a `PORT` environment variable at runtime, and the application is configured to pick this up automatically.
 
 ### Database (Supabase)
 
@@ -269,4 +293,4 @@ Hibernate is set to `ddl-auto=update`, so tables are created/updated automatical
 
 - Payment is simulated — the bank slip image is uploaded but not stored persistently (no object storage integration). The enrollment is confirmed regardless of slip content.
 - Redis caching is configured but currently disabled in production to keep infrastructure simple.
-- The mentor profile page (`/mentors/:mentorId`) is built for the public browse flow; reviews are visible but the "Write Review" button is only shown for completed sessions in the student dashboard.
+- Each subject belongs to exactly one mentor (one-to-many). A many-to-many subject/mentor relationship is not currently supported.
